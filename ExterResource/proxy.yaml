@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Proxy Instances
+#----------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    Default: Dev
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+  #------------------
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: (required) Name of an existing EC2 key pair
+  ProxyInstanceType: 
+    Type: String 
+    Default: m5.large 
+    ConstraintDescription : Must be a valid EC2 instance type
+    AllowedValues: 
+      - t2.micro 
+      - t2.small 
+      - t2.medium 
+      - t2.large 
+      - t2.xlarge 
+      - t2.2xlarge 
+      - m5.large 
+      - m5.xlarge 
+      - m5.2xlarge 
+      - m5.4xlarge 
+      - m5.12xlarge 
+      - m5.24xlarge 
+  ProxyAmiId:
+    Type: AWS::EC2::Image::Id
+    Description: (required) AMI ID
+    Default: ami-0f9ae750e8274075b  #for Tokyo-region
+    #Default: ami-0b419c3a4b01d1859  #for singapore-region
+  ProxyAutoRecoveryMinutes:
+    Type: Number
+    Description: Auto Recovery Time(Minutes)
+    Default: 1
+    MinValue: 1
+    MaxValue: 120
+  #------------------
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      -
+        Label:
+          default: "General"
+        Parameters:
+          - Environment
+      -
+        Label:
+          default: "Forward Proxy"
+        Parameters:
+          - KeyName
+          - ProxyInstanceType
+          - ProxyAmiId
+          - ProxyAutoRecoveryMinutes
+#----------------------------------------------
+Resources:
+  #------------------
+  ProxyLunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: FowardProxyLunchTemplate
+      LaunchTemplateData:
+        ImageId: !Ref ProxyAmiId
+        InstanceType: !Ref ProxyInstanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          -  Fn::ImportValue: !Sub ${Environment}-ExterSg-ProxySGId
+        Monitoring:
+          Enabled: true
+        TagSpecifications:
+          -
+            ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub ${Environment}-ProxyInstance
+        UserData:
+          Fn::Base64: !Sub | 
+            #!/bin/bash -xe
+            yum update -y
+            hostnamectl -h bastion
+            yum install -y aws-cfn-bootstrap cloud-init aws-cli 
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ProxyLunchTemplate --region ${AWS::Region} --configsets proxy_setup
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ProxyLunchTemplate --region ${AWS::Region}
+    Metadata:
+      AWS::CloudFormation::Init: 
+        configSets: 
+          proxy_setup:
+            - install_squid 
+            - setup_squid 
+        install_squid: 
+          packages: 
+            yum: 
+              squid: [] 
+        setup_squid: 
+          files: 
+            "/etc/squid/squid.conf": 
+              content: !Sub | 
+                # define ip address 
+                acl localnet src 127.0.0.0/8 
+                acl localnet src ::1/128 
+ 
+                acl SSL_ports port 443 
+                acl Safe_ports port 443
+                acl CONNECT method CONNECT 
+                http_access deny !Safe_ports 
+ 
+                # Deny CONNECT to other than secure SSL ports 
+                http_access deny CONNECT !SSL_ports 
+ 
+                # Only allow cachemgr access from localhost 
+                http_access allow localhost manager 
+                http_access deny manager 
+ 
+                # from where browsing should be allowed 
+                http_access allow localnet 
+ 
+                # include url white list 
+                acl whitelist dstdomain "/etc/squid/whitelist" 
+                http_access allow whitelist 
+ 
+                # And finally deny all other access to this proxy 
+                http_access deny all 
+                #------------------------------------------ 
+                http_port 3128
+
+                # Leave coredumps in the first cache dir
+                coredump_dir /var/spool/squid
+ 
+                # anonymouse host name
+                visible_hostname unknown
+              mode: '000640'
+              owner: root
+              group: squid
+            "/etc/squid/whitelist":
+              content: !Sub |
+                .google.co.jp
+                github.com
+                gist.github.com
+              mode: '000640'
+              owner: root
+              group: squid
+          services:
+            sysvinit:
+              squid:
+                enabled: true
+                ensureRunning: true
+                files:
+                  - "/etc/squid/squid.conf"
+                  - "/etc/squid/whitelist.conf"
+  #------------------
+  ProxyInstance1: 
+    Type: AWS::EC2::Instance 
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateName: FowardProxyLunchTemplate
+        Version: !GetAtt ProxyLunchTemplate.LatestVersionNumber
+      SubnetId:
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-Subnet1Id
+      SourceDestCheck: false
+  ProxyInstance2: 
+    Type: AWS::EC2::Instance 
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateName: FowardProxyLunchTemplate
+        Version: !GetAtt ProxyLunchTemplate.LatestVersionNumber
+      SubnetId:
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-Subnet2Id
+      SourceDestCheck: false
+  #------------------
+Outputs:
+  ProxyInstance1PrivateIp:
+    Description: 'Foward Proxy #1 Private IP'
+    Value: !GetAtt ProxyInstance1.PrivateIp
+    Export:
+      Name: !Sub "${AWS::StackName}-ProxyInstance1PrivateIp"
+  ProxyInstance2PrivateIp:
+    Description: 'Foward Proxy #2 Private IP'
+    Value: !GetAtt ProxyInstance2.PrivateIp
+    Export:
+      Name: !Sub "${AWS::StackName}-ProxyInstance2PrivateIp"

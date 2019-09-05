@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy a bastion server
+#----------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+  #------------------
+  InstanceType:
+    Description: (Optional) Instance type
+    Type: String
+    Default: t3.micro
+  AmiId:
+    Description: (Optional) AMI ID
+    Type: String
+    Default: ami-0ff21806645c5e492
+  KeyName:
+    Description: (required) Name of an existing EC2 key pair
+    Type: "AWS::EC2::KeyPair::KeyName"
+  AutoRecoveryMinutes:
+    Description: (optional) Auto Recovery Time(Minutes)
+    Type: Number
+    Default: 1
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: Environment
+        Parameters: 
+          - Environment
+      -
+        Label:
+          default: Bastion Server
+        Parameters:
+          - InstanceType
+          - AmiId
+          - KeyName
+          - AutoRecoveryMinutes
+#----------------------------------------------
+Conditions: 
+  CheckAutoRecovery: !Not [!Equals [!Ref AutoRecoveryMinutes, 0 ]]
+#----------------------------------------------
+Resources:
+  #------------------ bastion
+  BastionServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Sub ${AmiId}
+      InstanceType: !Sub ${InstanceType}
+      IamInstanceProfile: !Ref BastionServerProfile
+      Monitoring: yes
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: '0'
+          SubnetId:
+            Fn::ImportValue: !Sub ${Environment}-VpcExter-Subnet1Id
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Environment}-ExterSg-BastionSGId
+      Tags:
+        - Key: Name
+          Value: BastionServer
+        - Key: Environment
+          Value: !Ref Environment
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+            - ""
+            - - !Sub |
+                #!/bin/bash -xe
+                yum update -y
+                hostnamectl -h bastion
+    DependsOn:
+      - BastionServerProfile
+  #---
+  BastionServerProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Environment}-BastionServerProfile-${AWS::StackName}
+      Path: "/"
+      Roles:
+        - !Ref BastionServerRole
+  BastionServerRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  RecoveryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CheckAutoRecovery
+    Properties:
+      AlarmDescription: AutoRecovery for the Bastion Server.
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed_System
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: !Ref AutoRecoveryMinutes
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - !Sub "arn:aws:automate:${AWS::Region}:ec2:recover"
+      - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:admin"
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref BastionServer
+    DependsOn: BastionServer
+  BastionLocalDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcInternalDnsName
+      Comment: A record for the private IP address of Bastion instance.
+      Name:
+        Fn::Join:
+          - ""
+          - - bastion.
+            - Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcInternalDnsName
+      Type: A
+      TTL: 60
+      ResourceRecords:
+        - !GetAtt BastionServer.PrivateIp
+Outputs:
+  BastionServerId:
+    Description: Bastion Instance ID
+    Value: !Ref BastionServer
+    Export:
+      Name: !Sub ${AWS::StackName}-BastionServerId
+  BastionServerPublicDNS:
+    Description: Bastion Instance Public DNS
+    Value: !GetAtt BastionServer.PublicDnsName
+    Export:
+      Name: !Sub ${AWS::StackName}-BastionServerPublicDNS
+  BastionServerPublicIP:
+    Description: Bastion Instance Public IP
+    Value: !GetAtt BastionServer.PublicIp 
+    Export:
+      Name: !Sub ${AWS::StackName}-BastionServerPublicIP
+  BastionServerPrivateDNS:
+    Description: Bastion Instance Private DNS
+    Value: !Ref BastionLocalDNSRecord
+    Export:
+      Name: !Sub ${AWS::StackName}-BastionServerPrivateDNS
+  BastionServerPrivateIP:
+    Description: Bastion Instance Private IP
+    Value: !GetAtt BastionServer.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-BastionServerPrivateIP

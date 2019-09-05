@@ -24,12 +24,16 @@ Role="arn:aws:iam::709164018952:role/CloudFormationServiceRole"
 Stacks[0]=Iam;        Dirs[0]="./IAM";           Templates[0]="iam.yaml"
 Stacks[1]=VpcFunc;    Dirs[1]="./VPC";           Templates[1]="vpc-4subnets.yaml"
 Stacks[2]=VpcExter;   Dirs[2]="./VPC";           Templates[2]="vpc-2subnets.yaml"
+Stacks[3]=VpcPeer;    Dirs[3]="./VPC";           Templates[3]="vpcpeer.yaml"
+Stacks[4]=ExterSg;    Dirs[4]="./ExterResource"; Templates[4]="sg.yaml"
+Stacks[5]=Bastion;    Dirs[5]="./ExterResource"; Templates[5]="bastion.yaml"
+Stacks[6]=Proxy;      Dirs[6]="./ExterResource"; Templates[6]="proxy.yaml"
+
+Stacks[7]=Vpce;       Dirs[7]="./SgAndVpce";     Templates[7]="vpce.yaml"
 
 
 
 
-
-#Stacks[3]=Vpce;       Dirs[3]="./SgAndVpce";     Templates[3]="vpce.yaml"
 #Stacks[4]=Sg;         Dirs[4]="./SgAndVpce";     Templates[4]="sg.yaml"
 #Stacks[5]=S3;         Dirs[5]="./S3";            Templates[5]="s3.yaml"
 #Stacks[6]=Bastion;    Dirs[6]="./Instances";     Templates[6]="bastion.yaml"

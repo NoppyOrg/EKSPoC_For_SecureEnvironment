@@ -101,13 +101,13 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName:
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcInternalDnsName
-      Comment: A record for the private IP address of the DockerDevInstance.
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcInternalDnsName
+      Comment: A record for the private IP address of the BastionInstance.
       Name:
         Fn::Join:
           - ""
           - - "docker-dev."
-            - Fn::ImportValue: !Sub ${Environment}-Vpc-VpcInternalDnsName
+            - Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcInternalDnsName
       Type: A
       TTL: 60
       ResourceRecords:

@@ -7,19 +7,6 @@ Parameters:
     AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
     ConstraintDescription: Can contain only ASCII characters.
     Description: (required) Environment name
-  Subsystem:
-    Type: String
-    Description: (required) sub-system name
-  System:
-    Type: String
-    Description: (required) System name
-  #------------------
-  ExternalVpcStack:
-    Type: String
-    Description: (required)External VPC SecurityGroup Stack
-  FunctionVpcStack:
-    Type: String
-    Description: (required)Function VPC SecurityGroup Stack
   #------------------
 Metadata: 
   AWS::CloudFormation::Interface: 
@@ -29,14 +16,6 @@ Metadata:
           default: Environment
         Parameters: 
           - Environment
-          - Subsystem
-          - System
-      -
-        Label: 
-          default: General
-        Parameters: 
-          - ExternalVpcStack
-          - FunctionVpcStack
 #----------------------------------------------
 Resources:
   #------------------ VPC Peering
@@ -44,50 +23,30 @@ Resources:
     Type: AWS::EC2::VPCPeeringConnection
     Properties:
       VpcId:
-        Fn::ImportValue: !Sub ${Environment}-${FunctionVpcStack}-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       PeerVpcId: 
-        Fn::ImportValue: !Sub ${Environment}-${ExternalVpcStack}-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcId
       Tags:
         - Key: Name
           Value: VPCPeer-Function2External
         - Key: Environment
           Value: !Ref Environment
-        - Key: Subsystem
-          Value: !Sub ${Subsystem}
-        - Key: System
-          Value: !Sub ${System}
   #------------------ Add routings
   #--- FunctionVPC
   AddRouteDestExternalVpcToFunctionRouteTable:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId:
-        Fn::ImportValue: !Sub ${Environment}-${FunctionVpcStack}-RouteTableId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-PublicSubnetRouteTableId
       DestinationCidrBlock:
-        Fn::ImportValue: !Sub ${Environment}-${ExternalVpcStack}-VpcCidr
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcCidr
       VpcPeeringConnectionId: !Ref VpcPeering
   #--- ExternalVPC
   AddRouteDestFunctionVpcToFExternalPublicRouteTable:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId:
-        Fn::ImportValue: !Sub ${Environment}-${ExternalVpcStack}-PublicSubnetRouteTableId
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-RouteTableId
       DestinationCidrBlock:
-        Fn::ImportValue: !Sub ${Environment}-${FunctionVpcStack}-VpcCidr
-      VpcPeeringConnectionId: !Ref VpcPeering
-  AddRouteDestFunctionVpcToFExternalPrivateSubnet1RouteTable:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId:
-        Fn::ImportValue: !Sub ${Environment}-${ExternalVpcStack}-PrivateSubnet1RouteTableId
-      DestinationCidrBlock:
-        Fn::ImportValue: !Sub ${Environment}-${FunctionVpcStack}-VpcCidr
-      VpcPeeringConnectionId: !Ref VpcPeering
-  AddRouteDestFunctionVpcToFExternalPrivateSubnet2RouteTable:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId:
-        Fn::ImportValue: !Sub ${Environment}-${ExternalVpcStack}-PrivateSubnet2RouteTableId
-      DestinationCidrBlock:
-        Fn::ImportValue: !Sub ${Environment}-${FunctionVpcStack}-VpcCidr
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcCidr
       VpcPeeringConnectionId: !Ref VpcPeering
