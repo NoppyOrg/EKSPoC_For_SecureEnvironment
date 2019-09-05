@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy Instances
+#----------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+  #------------------
+  CfnRoleArn:
+    Type: String
+    Description: (required) Arn of IAM Role for Cfn 
+  #------------------
+  InstanceType:
+    Description: (Optional) Instance type
+    Type: String
+    Default: t3.large
+  AmiId:
+    Description: (Optional) AMI ID
+    Type: String
+    Default: ami-00d101850e971728d
+  AutoRecoveryMinutes:
+    Description: (optional) Auto Recovery Time(Minutes)
+    Type: Number
+    Default: 1
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: Environment
+        Parameters: 
+          - Environment
+          - CfnRoleArn
+      -
+        Label:
+          default:  Instances
+        Parameters:
+          - InstanceType
+          - AmiId
+          - AutoRecoveryMinutes
+#----------------------------------------------
+Conditions: 
+  CheckAutoRecovery: !Not [!Equals [!Ref AutoRecoveryMinutes, 0 ]]
+#----------------------------------------------
+Resources:
+  #------------------ DockerDev:
+  DockerDevInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Sub ${AmiId}
+      InstanceType: !Sub ${InstanceType}
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub ${Environment}-Iam-DockerDevInstanceRolePlofile
+      Monitoring: yes
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          SubnetId:
+            Fn::ImportValue: !Sub ${Environment}-Vpc-PublicSubnet1Id
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Environment}-Sg-DockerDevSGId
+          AssociatePublicIpAddress: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-DockerDev
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Update ALL rpms, and change hostname to Userfrendly name 
+          yum -y update
+          hostnamectl set-hostname "${Environment}-DockerDev"
+          # Setup Docker
+          sudo yum install -y docker
+          sudo systemctl start docker.service
+          sudo systemctl enable docker.service
+          sudo usermod -a -G docker ec2-user
+          # Setup AWS CLI
+          aws configure set region ${AWS::Region}
+          aws configure set output json
+  DockerDevInstanceAutoRecovery:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CheckAutoRecovery
+    Properties:
+      AlarmDescription: AutoRecovery for the DockerDevInstance
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed_System
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: !Ref AutoRecoveryMinutes
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - !Sub "arn:aws:automate:${AWS::Region}:ec2:recover"
+      - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:admin"
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref DockerDevInstance
+    DependsOn: DockerDevInstance
+  DockerDevInstanceLocalDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcInternalDnsName
+      Comment: A record for the private IP address of the DockerDevInstance.
+      Name:
+        Fn::Join:
+          - ""
+          - - "docker-dev."
+            - Fn::ImportValue: !Sub ${Environment}-Vpc-VpcInternalDnsName
+      Type: A
+      TTL: 60
+      ResourceRecords:
+        - !GetAtt DockerDevInstance.PrivateIp
+Outputs:
+  #---------------- EC2 Instance
+  DockerDevInstanceId:
+    Description: DockerDev Instance ID
+    Value: !Ref DockerDevInstance
+    Export:
+      Name: !Sub ${AWS::StackName}-DockerDevInstanceId

@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy IAM Role for Instances
+#----------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+Resources:
+  # EC2インスタンスに付与するインスタンスロールの作成を行う
+  # ここでは、マネージドポリシーのみ付与し、
+  # S3などリソースを意識するポリシーは各リソースデプロイ時にアタッチする
+  #---IAM Role(For Instances)
+  DockerDevInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  DockerDevInstanceRolePlofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Environment}-DockerDevInstanceRole-${AWS::StackName}
+      Path: "/"
+      Roles:
+        - !Ref DockerDevInstanceRole
+  #---
+  ManagerInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  ManagerInstanceRolePlofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Environment}-ManagerInstanceRole-${AWS::StackName}
+      Path: "/"
+      Roles:
+        - !Ref ManagerInstanceRole
+  #---
+  EcsContainerInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  EcsContainerInstanceRolePlofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Environment}-EcsContainerInstanceRole-${AWS::StackName}
+      Path: "/"
+      Roles:
+        - !Ref EcsContainerInstanceRole
+  #---
+  EcsTaskRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  #---
+  EksServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - eks.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+  #---
+  EksWorkerNodeInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  EksWorkerNodeInstanceRolePlofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Environment}-EksWorkerNodeInstanceRole-${AWS::StackName}
+      Path: "/"
+      Roles:
+        - !Ref EksWorkerNodeInstanceRole
+  #---
+  EksTaskRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+Outputs:
+  #---------------- IAM Role
+  DockerDevInstanceRoleArn:
+    Description: Role Arn of DockerDevInstanceRole
+    Value: !GetAtt DockerDevInstanceRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-DockerDevInstanceRoleArn
+  DockerDevInstanceRoleName:
+    Description: Role Name of DockerDevInstanceRole
+    Value: !Ref DockerDevInstanceRole
+    Export:
+      Name: !Sub ${AWS::StackName}-DockerDevInstanceRoleName
+  DockerDevInstanceRolePlofile:
+    Description: Arn of DockerDevInstanceRolePlofile
+    Value: !Ref DockerDevInstanceRolePlofile
+    Export:
+      Name: !Sub ${AWS::StackName}-DockerDevInstanceRolePlofile
+  #------------------
+  ManagerInstanceRoleArn:
+    Description: Role Arn of ManagerInstanceRole
+    Value: !GetAtt ManagerInstanceRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ManagerInstanceRoleArn
+  ManagerInstanceRoleName:
+    Description: Role Name of ManagerInstanceRole
+    Value: !Ref ManagerInstanceRole
+    Export:
+      Name: !Sub ${AWS::StackName}-ManagerInstanceRoleName
+  ManagerInstanceRolePlofile:
+    Description: Arn of ManagerInstanceRolePlofile
+    Value: !Ref ManagerInstanceRolePlofile
+    Export:
+      Name: !Sub ${AWS::StackName}-ManagerInstanceRolePlofile
+  #------------------
+  EcsContainerInstanceRoleArn:
+    Description: Role Arn of EcsContainerInstanceRole
+    Value: !GetAtt EcsContainerInstanceRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EcsContainerInstanceRoleArn
+  EcsContainerInstanceRoleName:
+    Description: Role Name of EcsContainerInstanceRole
+    Value: !Ref EcsContainerInstanceRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EcsContainerInstanceRoleName
+  EcsContainerInstanceRolePlofile:
+    Description: Arn of EcsContainerInstanceRolePlofile
+    Value: !Ref EcsContainerInstanceRolePlofile
+    Export:
+      Name: !Sub ${AWS::StackName}-EcsContainerInstanceRolePlofile
+  #------------------
+  EcsTaskRoleArn:
+    Description: Role Arn of EcsTaskRole
+    Value: !GetAtt EcsTaskRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EcsTaskRoleArn
+  EcsTaskRoleName:
+    Description: Role Name of EcsTaskRole
+    Value: !Ref EcsTaskRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EcsTaskRoleName
+  #------------------
+  EksServiceRoleArn:
+    Description: Role Arn of EksServiceRole
+    Value: !GetAtt EksServiceRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EksServiceRoleArn
+  EksServiceRoleName:
+    Description: Role Name of EksServiceRole
+    Value: !Ref EksServiceRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EksServiceRoleName
+  #------------------
+  EksWorkerNodeInstanceRoleArn:
+    Description: Role Arn of EksWorkerNodeInstanceRole
+    Value: !GetAtt EksWorkerNodeInstanceRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EksWorkerNodeInstanceRoleArn
+  EksWorkerNodeInstanceRoleName:
+    Description: Role Name of EksWorkerNodeInstanceRole
+    Value: !Ref EksWorkerNodeInstanceRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EksWorkerNodeInstanceRoleName
+  EksWorkerNodeInstanceRolePlofile:
+    Description: Arn of EksWorkerNodeInstanceRolePlofile
+    Value: !Ref EksWorkerNodeInstanceRolePlofile
+    Export:
+      Name: !Sub ${AWS::StackName}-EksWorkerNodeInstanceRolePlofile
+  #------------------
+  EksTaskRoleArn:
+    Description: Role Arn of EksTaskRole
+    Value: !GetAtt EksTaskRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EksTaskRoleArn
+  EksTaskRoleName:
+    Description: Role Name of EksTaskRole
+    Value: !Ref EksTaskRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EksTaskRoleName
+  #------------------

@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy SecurityGroups
+#----------------------------------------------
+Parameters:
+  #------------------
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+
+#----------------------------------------------
+Resources:
+  #------------------ Security Groups
+  DockerDevSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-DockerDevSG
+      GroupDescription: For DockerDev Instances
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-DockerDevSG
+  #--
+  MgrInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-MgrInstanceSG
+      GroupDescription: For Manager Instances
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-MgrInstanceSG
+  #--
+  EcsContainerInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-EcsContainerInstanceSG
+      GroupDescription: For ECS Container Instances
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-EcsContainerInstanceSG
+  EcsContainerInstanceSGIngressSshMgrSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EcsContainerInstanceSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId: !Ref MgrInstanceSG
+  #--
+  EksWorkerNodeInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-EksWorkerNodeInstanceSG
+      GroupDescription: For EKS Worker Nodes
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-EksWorkerNodeInstanceSG
+  EksWorkerNodeInstanceSGIngressSshMgrSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksWorkerNodeInstanceSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId: !Ref MgrInstanceSG
+  #--
+  EksControlPlaneSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-EksControlPlaneSG
+      GroupDescription: For EKS Control Plane
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-EksControlPlaneSG
+  EksControlPlaneSGIngressMgrInstanceSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksControlPlaneSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref MgrInstanceSG
+  EksControlPlaneSGIngressWorkerNodeSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksControlPlaneSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref EksWorkerNodeInstanceSG
+  #--
+  FargateSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-FargateSG
+      GroupDescription: For EKS Worker Nodes
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-FargateSG
+
+Outputs:
+  #------------------ Security Group
+  DockerDevSGId:
+    Description: DockerDevSG Security Group Id
+    Value: !Ref DockerDevSG
+    Export:
+      Name: !Sub ${AWS::StackName}-DockerDevSGId
+  MgrInstanceSGId:
+    Description: MgrInstanceSG Security Group Id
+    Value: !Ref MgrInstanceSG
+    Export:
+      Name: !Sub ${AWS::StackName}-MgrInstanceSGId
+  EcsContainerInstanceSGId:
+    Description: EcsContainerInstanceSG Security Group Id
+    Value: !Ref EcsContainerInstanceSG
+    Export:
+      Name: !Sub ${AWS::StackName}-EcsContainerInstanceSGId
+  EksWorkerNodeInstanceSGId:
+    Description: EksWorkerNodeInstanceSG Security Group Id
+    Value: !Ref EksWorkerNodeInstanceSG
+    Export:
+      Name: !Sub ${AWS::StackName}-EksWorkerNodeInstanceSGId
+  EksControlPlaneSGId:
+    Description: EksControlPlaneSG Security Group Id
+    Value: !Ref EksControlPlaneSG
+    Export:
+      Name: !Sub ${AWS::StackName}-EksControlPlaneSGId
+  FargateSGId:
+    Description: FargateSG Security Group Id
+    Value: !Ref FargateSG
+    Export:
+      Name: !Sub ${AWS::StackName}-FargateSGId

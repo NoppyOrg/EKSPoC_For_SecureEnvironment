@@ -1,0 +1,12 @@
+{
+    "Parameters": [
+        {
+            "ParameterKey": "Environment",
+            "ParameterValue": "PoC"
+        },
+        {
+            "ParameterKey": "CfnRoleArn",
+            "ParameterValue": "arn:aws:iam::709164018952:role/CloudFormationServiceRole"
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy EKS Cluster
+#----------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+  K8sVersion:
+    Type: String
+    Description: (Optional) Select the Kubernetes version to install.
+    Default: "1.13"
+    AllowedValues:
+      - "1.13"
+      - "1.12"
+      - "1.11"
+#----------------------------------------------
+Resources:
+  #------------------ EKS CLuster
+  EksCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      #Name: XXXX
+      Version: !Ref K8sVersion
+      RoleArn :
+        Fn::ImportValue: !Sub ${Environment}-Iam-EksServiceRoleArn
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${Environment}-Sg-EksControlPlaneSGId
+        SubnetIds: 
+          - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
+          - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+Outputs:
+  #---------------- EC2 Instance
+  EksClusterId:
+    Description: Eks Cluster ID
+    Value: !Ref EksCluster
+    Export:
+      Name: !Sub ${AWS::StackName}-EksClusterId

@@ -1,0 +1,16 @@
+{
+    "Parameters": [
+        {
+            "ParameterKey": "VpcInternalDnsName",
+            "ParameterValue": "poc-external-tokyo-local."
+        },
+        {
+            "ParameterKey": "InternetAccess",
+            "ParameterValue": "true"
+        },
+        {
+            "ParameterKey": "VpcCidr",
+            "ParameterValue": "10.2.0.0/16"
+        }
+    ]
+}
