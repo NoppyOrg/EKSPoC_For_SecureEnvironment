@@ -52,18 +52,28 @@ aws --profile ${PROFILE} --region ${REGION} eks create-cluster \
 # Setup proxy environment values
 export http_proxy=http://FowardProxy:3128
 export https_proxy=http://FowardProxy:3128
+export no_proxy=169.254.169.254
 
 # Install kubectl
 curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl
 curl -o kubectl.sha256 https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl.sha256
 openssl sha1 -sha256 kubectl
 chmod +x ./kubectl
-mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+mkdir -p $HOME/bin && mv ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
 echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
 
 kubectl version --short --client
 
-#
+#install aws-iam-authenticator
+curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator
+curl -o aws-iam-authenticator.sha256 https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator.sha256
+openssl sha1 -sha256 aws-iam-authenticator
+
+chmod +x ./aws-iam-authenticator
+mkdir -p $HOME/bin && mv ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$HOME/bin:$PATH
+
+aws-iam-authenticator help
+
 ```
 
 
