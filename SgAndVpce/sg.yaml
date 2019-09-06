@@ -18,7 +18,7 @@ Resources:
       GroupName: !Sub ${Environment}-DockerDevSG
       GroupDescription: For DockerDev Instances
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-DockerDevSG
@@ -29,7 +29,7 @@ Resources:
       GroupName: !Sub ${Environment}-MgrInstanceSG
       GroupDescription: For Manager Instances
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-MgrInstanceSG
@@ -40,7 +40,7 @@ Resources:
       GroupName: !Sub ${Environment}-EcsContainerInstanceSG
       GroupDescription: For ECS Container Instances
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-EcsContainerInstanceSG
@@ -59,7 +59,7 @@ Resources:
       GroupName: !Sub ${Environment}-EksWorkerNodeInstanceSG
       GroupDescription: For EKS Worker Nodes
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-EksWorkerNodeInstanceSG
@@ -78,7 +78,7 @@ Resources:
       GroupName: !Sub ${Environment}-EksControlPlaneSG
       GroupDescription: For EKS Control Plane
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-EksControlPlaneSG
@@ -105,7 +105,7 @@ Resources:
       GroupName: !Sub ${Environment}-FargateSG
       GroupDescription: For EKS Worker Nodes
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-FargateSG

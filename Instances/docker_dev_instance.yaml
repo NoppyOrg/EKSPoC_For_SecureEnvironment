@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy Bastion Instances
+Description: Deploy Instances
 #----------------------------------------------
 Parameters:
   Environment:
@@ -52,7 +52,7 @@ Resources:
       NetworkInterfaces:
         - DeviceIndex: '0'
           SubnetId:
-            Fn::ImportValue: !Sub ${Environment}-Vpc-PublicSubnet1Id
+            Fn::ImportValue: !Sub ${Environment}-VpcFunc-PublicSubnet1Id
           GroupSet:
             - Fn::ImportValue: !Sub ${Environment}-Sg-DockerDevSGId
           AssociatePublicIpAddress: true
@@ -60,24 +60,31 @@ Resources:
         - Key: Name
           Value: !Sub ${Environment}-DockerDev
       UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash -xe
-          # Update ALL rpms, and change hostname to Userfrendly name 
-          yum -y update
-          hostnamectl set-hostname "${Environment}-DockerDev"
-
-          # Setup AWS CLI
-          aws configure set region ${AWS::Region}
-          aws configure set output json
-
-          # Setup kubectl command
-          cd /tmp
-          curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl
-          curl -o kubectl.sha256 https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl.sha256
-          openssl sha1 -sha256 kubectl
-          chmod +x ./kubectl
-          mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
-
+        Fn::Base64: 
+          Fn::Join:
+            - ""
+            - - !Sub |
+                #!/bin/bash -xe
+                # Update ALL rpms, and change hostname to Userfrendly name 
+                yum -y update
+                hostnamectl set-hostname "${Environment}-DockerDev"
+                # Setup Docker
+                sudo yum install -y docker
+                # add proxy setting
+                sudo mkdir -p /etc/systemd/system/docker.service.d
+                cat > sudo mkdir -p /etc/systemd/system/docker.service.d/http-proxy.conf << EOL
+                [Service]
+              - "Environment=\"HTTPS_PROXY=http://"
+              - Fn::ImportValue: !Sub ${Environment}-Proxy-ProxyInstance1PrivateIp
+              - ":3128\" \"NO_PROXY=localhost,127.0.0.1,.dkr.ecr.${AWS::Region}.amazonaws.com\"\n"
+              - !Sub |
+                EOL
+                sudo systemctl start docker.service
+                sudo systemctl enable docker.service
+                sudo usermod -a -G docker ec2-user
+                # Setup AWS CLI
+                aws configure set region ${AWS::Region}
+                aws configure set output json
   DockerDevInstanceAutoRecovery:
     Type: AWS::CloudWatch::Alarm
     Condition: CheckAutoRecovery
@@ -101,13 +108,13 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName:
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcInternalDnsName
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcInternalDnsName
       Comment: A record for the private IP address of the DockerDevInstance.
       Name:
         Fn::Join:
           - ""
           - - "docker-dev."
-            - Fn::ImportValue: !Sub ${Environment}-Vpc-VpcInternalDnsName
+            - Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcInternalDnsName
       Type: A
       TTL: 60
       ResourceRecords:

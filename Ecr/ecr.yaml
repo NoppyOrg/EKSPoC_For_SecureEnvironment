@@ -82,30 +82,28 @@ Resources:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId:
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.dkr
       VpcEndpointType: Interface
       PrivateDnsEnabled: yes
       SubnetIds:
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
       SecurityGroupIds: 
         - Fn::ImportValue: !Sub ${Environment}-Vpce-VPCEndpointSGId
   EcrApiEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId:
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
       VpcEndpointType: Interface
       PrivateDnsEnabled: yes
       SubnetIds:
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
       SecurityGroupIds: 
         - Fn::ImportValue: !Sub ${Environment}-Vpce-VPCEndpointSGId
-
-
 Outputs:
   #---------------- EC2 Instance
   EcrRepositoryId:

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy Instances
+Description: Deploy K8mgr Instances
 #----------------------------------------------
 Parameters:
   Environment:
@@ -7,10 +7,6 @@ Parameters:
     AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
     ConstraintDescription: Can contain only ASCII characters.
     Description: (required) Environment name
-  #------------------
-  CfnRoleArn:
-    Type: String
-    Description: (required) Arn of IAM Role for Cfn 
   #------------------
   InstanceType:
     Description: (Optional) Instance type
@@ -32,7 +28,6 @@ Metadata:
           default: Environment
         Parameters: 
           - Environment
-          - CfnRoleArn
       -
         Label:
           default:  Instances
@@ -46,43 +41,48 @@ Conditions:
 #----------------------------------------------
 Resources:
   #------------------ DockerDev:
-  DockerDevInstance:
+  K8sMgr:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Sub ${AmiId}
       InstanceType: !Sub ${InstanceType}
       IamInstanceProfile:
-        Fn::ImportValue: !Sub ${Environment}-Iam-DockerDevInstanceRolePlofile
+        Fn::ImportValue: !Sub ${Environment}-Iam-ManagerInstanceRolePlofile
       Monitoring: yes
       NetworkInterfaces:
         - DeviceIndex: '0'
           SubnetId:
-            Fn::ImportValue: !Sub ${Environment}-Vpc-PublicSubnet1Id
+            Fn::ImportValue: !Sub ${Environment}-VpcFunc-PublicSubnet1Id
           GroupSet:
             - Fn::ImportValue: !Sub ${Environment}-Sg-DockerDevSGId
           AssociatePublicIpAddress: true
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-DockerDev
+          Value: !Sub ${Environment}-K8sMgr
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
           # Update ALL rpms, and change hostname to Userfrendly name 
           yum -y update
-          hostnamectl set-hostname "${Environment}-DockerDev"
-          # Setup Docker
-          sudo yum install -y docker
-          sudo systemctl start docker.service
-          sudo systemctl enable docker.service
-          sudo usermod -a -G docker ec2-user
+          hostnamectl set-hostname "${Environment}-K8sMgr"
+
           # Setup AWS CLI
           aws configure set region ${AWS::Region}
           aws configure set output json
-  DockerDevInstanceAutoRecovery:
+
+          # Setup kubectl command
+          #cd /tmp
+          #curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl
+          #curl -o kubectl.sha256 https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl.sha256
+          #openssl sha1 -sha256 kubectl
+          #chmod +x ./kubectl
+          #mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+
+  K8sMgrAutoRecovery:
     Type: AWS::CloudWatch::Alarm
     Condition: CheckAutoRecovery
     Properties:
-      AlarmDescription: AutoRecovery for the DockerDevInstance
+      AlarmDescription: AutoRecovery for the K8sMgr
       Namespace: AWS/EC2
       MetricName: StatusCheckFailed_System
       Statistic: Minimum
@@ -95,27 +95,27 @@ Resources:
       - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:admin"
       Dimensions:
       - Name: InstanceId
-        Value: !Ref DockerDevInstance
-    DependsOn: DockerDevInstance
-  DockerDevInstanceLocalDNSRecord:
+        Value: !Ref K8sMgr
+    DependsOn: K8sMgr
+  K8sMgrLocalDNSRecord:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName:
-        Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcInternalDnsName
-      Comment: A record for the private IP address of the BastionInstance.
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcInternalDnsName
+      Comment: A record for the private IP address of the K8sMgr.
       Name:
         Fn::Join:
           - ""
-          - - "docker-dev."
-            - Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcInternalDnsName
+          - - "k8smgr."
+            - Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcInternalDnsName
       Type: A
       TTL: 60
       ResourceRecords:
-        - !GetAtt DockerDevInstance.PrivateIp
+        - !GetAtt K8sMgr.PrivateIp
 Outputs:
   #---------------- EC2 Instance
-  DockerDevInstanceId:
+  K8sMgrId:
     Description: DockerDev Instance ID
-    Value: !Ref DockerDevInstance
+    Value: !Ref K8sMgr
     Export:
-      Name: !Sub ${AWS::StackName}-DockerDevInstanceId
+      Name: !Sub ${AWS::StackName}-K8sMgrId

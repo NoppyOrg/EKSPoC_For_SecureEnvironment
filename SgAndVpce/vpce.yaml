@@ -18,14 +18,14 @@ Resources:
       GroupName: !Sub ${Environment}-VPCEndpointSG
       GroupDescription: Allow HTTPS(443)
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       SecurityGroupIngress:
         -
           IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp:
-            Fn::ImportValue: !Sub ${Environment}-Vpc-VpcCidr
+            Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcCidr
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-VPCEndpointSG
@@ -35,13 +35,13 @@ Resources:
   #  Type: 'AWS::EC2::VPCEndpoint'
   #  Properties:
   #    VpcId: 
-  #      Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+  #      Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
   #    ServiceName: !Sub com.amazonaws.${AWS::Region}.sts
   #    VpcEndpointType: Interface
   #    PrivateDnsEnabled: yes
   #    SubnetIds:
-  #      - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-  #      - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+  #      - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+  #      - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
   #    SecurityGroupIds: 
   #          - !Ref VPCEndpointSG
   #---For CloudFormation
@@ -49,13 +49,13 @@ Resources:
   #  Type: 'AWS::EC2::VPCEndpoint'
   #  Properties:
   #    VpcId: 
-  #      Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+  #      Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
   #    ServiceName: !Sub com.amazonaws.${AWS::Region}.cloudformation
   #    VpcEndpointType: Interface
   #    PrivateDnsEnabled: yes
   #    SubnetIds:
-  #      - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-  #      - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+  #      - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+  #      - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
   #    SecurityGroupIds: 
   #          - !Ref VPCEndpointSG
   #---For System Manager and Session Manager
@@ -63,39 +63,39 @@ Resources:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
       VpcEndpointType: Interface
       PrivateDnsEnabled: yes
       SubnetIds:
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
       SecurityGroupIds: 
             - !Ref VPCEndpointSG
   Ec2MessagesEndpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2messages
       VpcEndpointType: Interface
       PrivateDnsEnabled: yes
       SubnetIds:
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
       SecurityGroupIds: 
             - !Ref VPCEndpointSG
   SsmMessagesEndpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
       VpcEndpointType: Interface
       PrivateDnsEnabled: yes
       SubnetIds:
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
       SecurityGroupIds: 
             - !Ref VPCEndpointSG
   #---For EC2
@@ -103,13 +103,13 @@ Resources:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2
       VpcEndpointType: Interface
       PrivateDnsEnabled: yes
       SubnetIds:
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
       SecurityGroupIds: 
             - !Ref VPCEndpointSG
   #---For CloudWatch and CloudWatch Logs
@@ -117,26 +117,26 @@ Resources:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       ServiceName: !Sub com.amazonaws.${AWS::Region}.events
       VpcEndpointType: Interface
       PrivateDnsEnabled: yes
       SubnetIds:
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
       SecurityGroupIds: 
             - !Ref VPCEndpointSG
   LogsEndpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       VpcId: 
-        Fn::ImportValue: !Sub ${Environment}-Vpc-VpcId
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
       ServiceName: !Sub com.amazonaws.${AWS::Region}.logs
       VpcEndpointType: Interface
       PrivateDnsEnabled: yes
       SubnetIds:
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-        - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
       SecurityGroupIds: 
             - !Ref VPCEndpointSG
 Outputs:

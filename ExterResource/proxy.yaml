@@ -137,6 +137,22 @@ Resources:
               group: squid
             "/etc/squid/whitelist":
               content: !Sub |
+                #for docker Hub
+                .docker.io
+                docker-images-prod.s3.amazonaws.com
+
+                #for CentOS container image build
+                .centos.org
+                ftp-srv2.kddilabs.jp
+                ftp.iij.ad.jp
+                ftp.riken.jp
+
+                #for setup kubectl
+                amazon-eks.s3-us-west-2.amazonaws.com
+
+
+
+                #for debug
                 .google.co.jp
                 github.com
                 gist.github.com

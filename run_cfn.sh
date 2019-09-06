@@ -25,22 +25,18 @@ Stacks[0]=Iam;        Dirs[0]="./IAM";           Templates[0]="iam.yaml"
 Stacks[1]=VpcFunc;    Dirs[1]="./VPC";           Templates[1]="vpc-4subnets.yaml"
 Stacks[2]=VpcExter;   Dirs[2]="./VPC";           Templates[2]="vpc-2subnets.yaml"
 Stacks[3]=VpcPeer;    Dirs[3]="./VPC";           Templates[3]="vpcpeer.yaml"
+#DMZ VPC
 Stacks[4]=ExterSg;    Dirs[4]="./ExterResource"; Templates[4]="sg.yaml"
 Stacks[5]=Bastion;    Dirs[5]="./ExterResource"; Templates[5]="bastion.yaml"
 Stacks[6]=Proxy;      Dirs[6]="./ExterResource"; Templates[6]="proxy.yaml"
-
+#Function VPC
 Stacks[7]=Vpce;       Dirs[7]="./SgAndVpce";     Templates[7]="vpce.yaml"
-
-
-
-
-#Stacks[4]=Sg;         Dirs[4]="./SgAndVpce";     Templates[4]="sg.yaml"
-#Stacks[5]=S3;         Dirs[5]="./S3";            Templates[5]="s3.yaml"
-#Stacks[6]=Bastion;    Dirs[6]="./Instances";     Templates[6]="bastion.yaml"
-#Stacks[7]=DockerDev;  Dirs[7]="./Instances";     Templates[7]="docker_dev_instance.yaml"
-#Stacks[8]=Ecr;        Dirs[8]="./Ecr";           Templates[8]="ecr.yaml"
-#Stacks[9]=Eks;        Dirs[9]="./Eks";           Templates[9]="eks.yaml"
-StacksLAST=9
+Stacks[8]=Sg;         Dirs[8]="./SgAndVpce";     Templates[8]="sg.yaml"
+Stacks[9]=S3;         Dirs[9]="./S3";            Templates[9]="s3.yaml"
+Stacks[10]=Ecr;       Dirs[10]="./Ecr";          Templates[10]="ecr.yaml"
+Stacks[11]=DockerDev; Dirs[11]="./Instances";    Templates[11]="docker_dev_instance.yaml"
+Stacks[12]=K8sMgr;    Dirs[12]="./Instances";    Templates[12]="k8smgr.yaml"
+StacksLAST=12
 
 #--------------------------------------------
 function help(){
