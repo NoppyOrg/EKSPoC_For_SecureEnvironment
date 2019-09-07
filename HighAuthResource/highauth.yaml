@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy K8mgr Instances
+Description: Deploy High Autority Instances
 #----------------------------------------------
 Parameters:
   Environment:
@@ -41,48 +41,39 @@ Conditions:
 #----------------------------------------------
 Resources:
   #------------------ DockerDev:
-  K8sMgr:
+  HighAuth:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Sub ${AmiId}
       InstanceType: !Sub ${InstanceType}
       IamInstanceProfile:
-        Fn::ImportValue: !Sub ${Environment}-Iam-ManagerInstanceRolePlofile
+        Fn::ImportValue: !Sub ${Environment}-Iam-HighAuthorityInstanceRoleProfile
       Monitoring: yes
       NetworkInterfaces:
         - DeviceIndex: '0'
           SubnetId:
-            Fn::ImportValue: !Sub ${Environment}-VpcFunc-PublicSubnet1Id
+            Fn::ImportValue: !Sub ${Environment}-VpcHighAuth-PrivateSubnet1Id
           GroupSet:
-            - Fn::ImportValue: !Sub ${Environment}-Sg-MgrInstanceSGId
-          #AssociatePublicIpAddress: true
+            - Fn::ImportValue: !Sub ${Environment}-HighAuthSgVpce-HighAuthSGId
+          AssociatePublicIpAddress: false
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-K8sMgr
+          Value: !Sub ${Environment}-HighAuth
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
           # Update ALL rpms, and change hostname to Userfrendly name 
           yum -y update
-          hostnamectl set-hostname "${Environment}-K8sMgr"
+          hostnamectl set-hostname "${Environment}-HighAuth"
 
           # Setup AWS CLI
           aws configure set region ${AWS::Region}
           aws configure set output json
-
-          # Setup kubectl command
-          #cd /tmp
-          #curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl
-          #curl -o kubectl.sha256 https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl.sha256
-          #openssl sha1 -sha256 kubectl
-          #chmod +x ./kubectl
-          #mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
-
-  K8sMgrAutoRecovery:
+  HighAuthAutoRecovery:
     Type: AWS::CloudWatch::Alarm
     Condition: CheckAutoRecovery
     Properties:
-      AlarmDescription: AutoRecovery for the K8sMgr
+      AlarmDescription: AutoRecovery for the HighAuth
       Namespace: AWS/EC2
       MetricName: StatusCheckFailed_System
       Statistic: Minimum
@@ -95,27 +86,27 @@ Resources:
       - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:admin"
       Dimensions:
       - Name: InstanceId
-        Value: !Ref K8sMgr
-    DependsOn: K8sMgr
-  K8sMgrLocalDNSRecord:
+        Value: !Ref HighAuth
+    DependsOn: HighAuth
+  HighAuthLocalDNSRecord:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName:
-        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcInternalDnsName
-      Comment: A record for the private IP address of the K8sMgr.
+        Fn::ImportValue: !Sub ${Environment}-VpcHighAuth-VpcInternalDnsName
+      Comment: A record for the private IP address of the HighAuth.
       Name:
         Fn::Join:
           - ""
-          - - "k8smgr."
-            - Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcInternalDnsName
+          - - "highauth."
+            - Fn::ImportValue: !Sub ${Environment}-VpcHighAuth-VpcInternalDnsName
       Type: A
       TTL: 60
       ResourceRecords:
-        - !GetAtt K8sMgr.PrivateIp
+        - !GetAtt HighAuth.PrivateIp
 Outputs:
   #---------------- EC2 Instance
-  K8sMgrId:
+  HighAuthId:
     Description: DockerDev Instance ID
-    Value: !Ref K8sMgr
+    Value: !Ref HighAuth
     Export:
-      Name: !Sub ${AWS::StackName}-K8sMgrId
+      Name: !Sub ${AWS::StackName}-HighAuthId

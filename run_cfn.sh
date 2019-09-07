@@ -21,22 +21,32 @@ Role="arn:aws:iam::709164018952:role/CloudFormationServiceRole"
 # list of stack
 #--------------
 # For Guest
-Stacks[0]=Iam;        Dirs[0]="./IAM";           Templates[0]="iam.yaml"
-Stacks[1]=VpcFunc;    Dirs[1]="./VPC";           Templates[1]="vpc-4subnets.yaml"
-Stacks[2]=VpcExter;   Dirs[2]="./VPC";           Templates[2]="vpc-2subnets.yaml"
-Stacks[3]=VpcPeer;    Dirs[3]="./VPC";           Templates[3]="vpcpeer.yaml"
+Stacks[0]=Iam;        Dirs[0]="./IAM";              Templates[0]="iam.yaml"
+Stacks[1]=VpcFunc;    Dirs[1]="./VPC";              Templates[1]="vpc-4subnets.yaml"
+Stacks[2]=VpcExter;   Dirs[2]="./VPC";              Templates[2]="vpc-2subnets.yaml"
+Stacks[3]=VpcPeer;    Dirs[3]="./VPC";              Templates[3]="vpcpeer.yaml"
+Stacks[4]=VpcHighAuth; Dirs[4]="./VPC";             Templates[4]="vpc-4subnets.yaml"
 #DMZ VPC
-Stacks[4]=ExterSg;    Dirs[4]="./ExterResource"; Templates[4]="sg.yaml"
-Stacks[5]=Bastion;    Dirs[5]="./ExterResource"; Templates[5]="bastion.yaml"
-Stacks[6]=Proxy;      Dirs[6]="./ExterResource"; Templates[6]="proxy.yaml"
+Stacks[5]=ExterSg;    Dirs[5]="./ExterResource";    Templates[5]="sg.yaml"
+Stacks[6]=Bastion;    Dirs[6]="./ExterResource";    Templates[6]="bastion.yaml"
+Stacks[7]=Proxy;      Dirs[7]="./ExterResource";    Templates[7]="proxy.yaml"
+#HightAutority VPC
+#Stacks[8]=HighAuthSgVpce;  Dirs[8]="./HighAuthResource";  Templates[8]="sg_and_vpce.yaml"
+#Stacks[9]=HighAuthProxy;   Dirs[9]="./HighAuthResource";  Templates[9]="proxy.yaml"
+#Stacks[10]=HighAuthIns;    Dirs[10]="./HighAuthResource"; Templates[10]="highauth.yaml"
+
 #Function VPC
-Stacks[7]=Vpce;       Dirs[7]="./SgAndVpce";     Templates[7]="vpce.yaml"
-Stacks[8]=Sg;         Dirs[8]="./SgAndVpce";     Templates[8]="sg.yaml"
-Stacks[9]=S3;         Dirs[9]="./S3";            Templates[9]="s3.yaml"
-Stacks[10]=Ecr;       Dirs[10]="./Ecr";          Templates[10]="ecr.yaml"
-Stacks[11]=DockerDev; Dirs[11]="./Instances";    Templates[11]="docker_dev_instance.yaml"
-Stacks[12]=K8sMgr;    Dirs[12]="./Instances";    Templates[12]="k8smgr.yaml"
-StacksLAST=12
+Stacks[11]=Vpce;      Dirs[11]="./SgAndVpce";       Templates[11]="vpce.yaml"
+Stacks[12]=Sg;        Dirs[12]="./SgAndVpce";       Templates[12]="sg.yaml"
+Stacks[13]=S3;        Dirs[13]="./S3";              Templates[13]="s3.yaml"
+Stacks[14]=Ecr;       Dirs[14]="./Ecr";             Templates[14]="ecr.yaml"
+Stacks[15]=DockerDev; Dirs[15]="./Instances";       Templates[15]="docker_dev_instance.yaml"
+Stacks[16]=K8sMgr;    Dirs[16]="./Instances";       Templates[16]="k8smgr.yaml"
+Stacks[17]=HighAuth;  Dirs[17]="./Instances";       Templates[17]="highauth.yaml"
+#EKS
+Stacks[18]=Eks;       Dirs[18]="./Eks";             Templates[18]="eks.yaml"
+
+StacksLAST=18
 
 #--------------------------------------------
 function help(){

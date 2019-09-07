@@ -62,13 +62,13 @@ Resources:
   ProxyLunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateName: FowardProxyLunchTemplate
+      LaunchTemplateName: HighAuthFowardProxyLunchTemplate
       LaunchTemplateData:
         ImageId: !Ref ProxyAmiId
         InstanceType: !Ref ProxyInstanceType
         KeyName: !Ref KeyName
         SecurityGroupIds:
-          -  Fn::ImportValue: !Sub ${Environment}-ExterSg-ProxySGId
+          -  Fn::ImportValue: !Sub ${Environment}-HighAuthSgVpce-ProxySGId
         Monitoring:
           Enabled: true
         TagSpecifications:
@@ -81,7 +81,7 @@ Resources:
           Fn::Base64: !Sub | 
             #!/bin/bash -xe
             yum update -y
-            hostnamectl -h bastion
+            hostnamectl -h HighAuth
             yum install -y aws-cfn-bootstrap cloud-init aws-cli 
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ProxyLunchTemplate --region ${AWS::Region} --configsets proxy_setup
             /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ProxyLunchTemplate --region ${AWS::Region}
@@ -137,17 +137,7 @@ Resources:
               group: squid
             "/etc/squid/whitelist":
               content: !Sub |
-                #for docker Hub
-                .docker.io
-                docker-images-prod.s3.amazonaws.com
-
-                #for CentOS container image build
-                .centos.org
-                ftp-srv2.kddilabs.jp
-                ftp.iij.ad.jp
-                ftp.riken.jp
-
-                #for Update AWS CLI and python tools
+                #for update awscli
                 bootstrap.pypa.io
                 pypi.org
                 files.pythonhosted.org
@@ -155,11 +145,13 @@ Resources:
                 #for setup kubectl
                 amazon-eks.s3-us-west-2.amazonaws.com
 
-                #for EKS service endpoint 
+                #for EKS service endpoint
                 eks.${AWS::Region}.amazonaws.com
-                
+
                 #for debug
                 .google.co.jp
+                github.com
+                gist.github.com
               mode: '000640'
               owner: root
               group: squid
@@ -176,19 +168,19 @@ Resources:
     Type: AWS::EC2::Instance 
     Properties:
       LaunchTemplate:
-        LaunchTemplateName: FowardProxyLunchTemplate
+        LaunchTemplateName: HighAuthFowardProxyLunchTemplate
         Version: !GetAtt ProxyLunchTemplate.LatestVersionNumber
       SubnetId:
-        Fn::ImportValue: !Sub ${Environment}-VpcExter-Subnet1Id
+        Fn::ImportValue: !Sub ${Environment}-VpcHighAuth-PublicSubnet1Id
       SourceDestCheck: false
   ProxyInstance2: 
     Type: AWS::EC2::Instance 
     Properties:
       LaunchTemplate:
-        LaunchTemplateName: FowardProxyLunchTemplate
+        LaunchTemplateName: HighAuthFowardProxyLunchTemplate
         Version: !GetAtt ProxyLunchTemplate.LatestVersionNumber
       SubnetId:
-        Fn::ImportValue: !Sub ${Environment}-VpcExter-Subnet2Id
+        Fn::ImportValue: !Sub ${Environment}-VpcHighAuth-PublicSubnet2Id
       SourceDestCheck: false
   #------------------
 Outputs:

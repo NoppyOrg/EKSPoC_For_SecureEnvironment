@@ -22,6 +22,14 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-DockerDevSG
+  DockerDevSGIngressProxySg:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DockerDevSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId: !Ref MgrInstanceSG
   #--
   MgrInstanceSG:
     Type: AWS::EC2::SecurityGroup

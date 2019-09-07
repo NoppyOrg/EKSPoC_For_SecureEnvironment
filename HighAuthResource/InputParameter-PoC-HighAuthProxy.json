@@ -1,0 +1,13 @@
+{
+    "Parameters": [
+        {
+            "ParameterKey": "Environment",
+            "ParameterValue": "PoC"
+        },
+        {
+            "ParameterKey": "KeyName",
+            "ParameterValue": "AWS_nobuyuf_common"
+        }
+    ]
+}
+

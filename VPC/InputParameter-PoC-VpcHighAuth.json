@@ -1,0 +1,24 @@
+{
+    "Parameters": [
+        {
+            "ParameterKey": "VpcInternalDnsName",
+            "ParameterValue": "poc-high-auth-tokyo-local."
+        },
+        {
+            "ParameterKey": "VpcName",
+            "ParameterValue": "HighAuthVpc"
+        },
+        {
+            "ParameterKey": "InternetAccess",
+            "ParameterValue": "true"
+        },
+        {
+            "ParameterKey": "EnableNatGW",
+            "ParameterValue": "false"
+        },
+        {
+            "ParameterKey": "VpcCidr",
+            "ParameterValue": "10.1.0.0/16"
+        }
+    ]
+}

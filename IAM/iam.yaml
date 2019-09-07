@@ -58,6 +58,29 @@ Resources:
       Roles:
         - !Ref ManagerInstanceRole
   #---
+  HighAuthorityInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  HighAuthorityInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Environment}-HighAuthorityInstanceRoleProfile-${AWS::StackName}
+      Path: "/"
+      Roles:
+        - !Ref HighAuthorityInstanceRole
+  #---
   EcsContainerInstanceRole:
     Type: "AWS::IAM::Role"
     Properties: 
@@ -151,7 +174,6 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-
 Outputs:
   #---------------- IAM Role
   DockerDevInstanceRoleArn:
@@ -185,6 +207,22 @@ Outputs:
     Value: !Ref ManagerInstanceRolePlofile
     Export:
       Name: !Sub ${AWS::StackName}-ManagerInstanceRolePlofile
+  #------------------
+  HighAuthorityInstanceRoleArn:
+    Description: Role Arn of HighAuthorityInstanceRole
+    Value: !GetAtt HighAuthorityInstanceRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-HighAuthorityInstanceRoleArn
+  HighAuthorityInstanceRoleName:
+    Description: Role Name of HighAuthorityInstanceRole
+    Value: !Ref HighAuthorityInstanceRole
+    Export:
+      Name: !Sub ${AWS::StackName}-HighAuthorityInstanceRoleName
+  HighAuthorityInstanceRoleProfile:
+    Description: Arn of HighAuthorityInstanceRole Profile
+    Value: !Ref HighAuthorityInstanceProfile
+    Export:
+      Name: !Sub ${AWS::StackName}-HighAuthorityInstanceRoleProfile
   #------------------
   EcsContainerInstanceRoleArn:
     Description: Role Arn of EcsContainerInstanceRole

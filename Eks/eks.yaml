@@ -17,24 +17,56 @@ Parameters:
       - "1.11"
 #----------------------------------------------
 Resources:
-  #------------------ EKS CLuster
-  EksCluster:
-    Type: AWS::EKS::Cluster
-    Properties:
-      #Name: XXXX
-      Version: !Ref K8sVersion
-      RoleArn :
-        Fn::ImportValue: !Sub ${Environment}-Iam-EksServiceRoleArn
-      ResourcesVpcConfig:
-        SecurityGroupIds:
-          - Fn::ImportValue: !Sub ${Environment}-Sg-EksControlPlaneSGId
-        SubnetIds: 
-          - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet1Id
-          - Fn::ImportValue: !Sub ${Environment}-Vpc-PrivateSubnet2Id
-Outputs:
-  #---------------- EC2 Instance
-  EksClusterId:
-    Description: Eks Cluster ID
-    Value: !Ref EksCluster
-    Export:
-      Name: !Sub ${AWS::StackName}-EksClusterId
+  # K8s Manager(User)
+  K8sHighAuthorityPolicy:
+    Type: AWS::IAM::Policy
+    Properties: 
+      PolicyName: !Sub "${Environment}-K8sHighAuthorityPolicy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "AllowEKSCluster"
+            Effect: Allow
+            Action:
+              - eks:*
+            Resource: "*"
+          - Sid: "AllowPassRoleForCreateClusters"
+            Effect: Allow
+            Action:
+              - iam:GetRole
+              - iam:PassRole
+            Resource: "*"
+          - Sid: "OnlyThisPoCEnvironment"
+            Effect: Allow
+            Action:
+              - cloudformation:Describe*
+              - cloudformation:List*
+            Resource: "*"
+      Roles:
+        - Fn::ImportValue: !Sub ${Environment}-Iam-HighAuthorityInstanceRoleName
+  #--------
+  K8sManagerPolicy:
+    Type: AWS::IAM::Policy
+    Properties: 
+      PolicyName: !Sub "${Environment}-K8sManagerPolicy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "AllowUpdateClusterVersionOnly"
+            Effect: Allow
+            Action:
+              - eks:UpdateClusterVersion
+              - eks:Describe*
+              - eks:List*
+            Resource: "*"
+      Roles:
+        - Fn::ImportValue: !Sub ${Environment}-Iam-ManagerInstanceRoleName
+
+
+#Outputs:
+#  #---------------- EC2 Instance
+#  EksClusterId:
+#    Description: Eks Cluster ID
+#    Value: !Ref EksCluster
+#    Export:
+#      Name: !Sub ${AWS::StackName}-EksClusterId
