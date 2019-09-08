@@ -30,10 +30,6 @@ Stacks[4]=VpcHighAuth; Dirs[4]="./VPC";             Templates[4]="vpc-4subnets.y
 Stacks[5]=ExterSg;    Dirs[5]="./ExterResource";    Templates[5]="sg.yaml"
 Stacks[6]=Bastion;    Dirs[6]="./ExterResource";    Templates[6]="bastion.yaml"
 Stacks[7]=Proxy;      Dirs[7]="./ExterResource";    Templates[7]="proxy.yaml"
-#HightAutority VPC
-#Stacks[8]=HighAuthSgVpce;  Dirs[8]="./HighAuthResource";  Templates[8]="sg_and_vpce.yaml"
-#Stacks[9]=HighAuthProxy;   Dirs[9]="./HighAuthResource";  Templates[9]="proxy.yaml"
-#Stacks[10]=HighAuthIns;    Dirs[10]="./HighAuthResource"; Templates[10]="highauth.yaml"
 
 #Function VPC
 Stacks[11]=Vpce;      Dirs[11]="./SgAndVpce";       Templates[11]="vpce.yaml"

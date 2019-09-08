@@ -1,6 +1,7 @@
-# EKS_ECS_reference
-EKSとECKのリファレンス環境作成用のCFn
-
+# CloudFormation: EKS PoC For Secure Environment
+セキュアな環境でEKSを利用するための検証用環境を作成するCloudFormationテンプレートです。
+# 作成環境
+![CFn_configuration](./Document/EKS_PoC.png)
 
 # 作成手順
 ## (1)ベースの構築
