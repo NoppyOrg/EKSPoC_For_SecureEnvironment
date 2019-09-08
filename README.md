@@ -5,6 +5,42 @@
 
 # 作成手順
 ## (1)ベースの構築
+### (1)-(a) CloudFormation用のサービスロールの作成
+CloudFormationのスタック作成時にサービスに貸与する、CloudFormation実行用のサービスロールを作成します。
+```shell
+export Profile=XXXXXXXX
+cat > cfn_policy.json << EOL
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "cloudformation.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+EOL
+aws --profile ${Profile} iam create-role --role-name CloudFormationServiceRole --assume-role-policy-document file://cfn_policy.json
+```
+作成したIAMロールのArn(` "Arn": "arn:aws:iam::999999999999:role/CloudFormationServiceRole",`)を控えておきます。
+### (1)-(b) デプロイ用シェルのプロファイルとCloudFormationServiceRoleの設定
+デプロイ用のシェル(run_cfn.sh)に実行環境のプロファイルと先ほど作成した CloudFormationServiceRoleのArnを設定します。
+- run_cfn.shをエディタで開き下記を編集します。
+```shell
+
+# list of Environment
+Envs[0]=PoC;  ProfileList[0]=XXXXXXX #実行する端末に設定しているプロファイル名に修正する(デフォルトを利用したい場合は、defaultと指定)
+EnvsLast=0
+
+#CloudFormation ServiceRole
+Role="arn:aws:iam::999999999999:role/CloudFormationServiceRole" #先ほど作成したCloudFormationServiceRoleのArnを設定
+
+```
+### (1)-(c) CloudFormationデプロイ 
 ```
 ./run_cfn.sh PoC Iam create
 ./run_cfn.sh PoC VpcFunc create
