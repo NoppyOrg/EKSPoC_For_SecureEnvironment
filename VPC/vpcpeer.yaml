@@ -41,6 +41,23 @@ Resources:
       DestinationCidrBlock:
         Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcCidr
       VpcPeeringConnectionId: !Ref VpcPeering
+  AddRouteDestExternalVpcToFunctionPrivate1RouteTable:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1RouteTableId
+      DestinationCidrBlock:
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcCidr
+      VpcPeeringConnectionId: !Ref VpcPeering
+  AddRouteDestExternalVpcToFunctionPrivate2RouteTable:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2RouteTableId
+      DestinationCidrBlock:
+        Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcCidr
+      VpcPeeringConnectionId: !Ref VpcPeering
+
   #--- ExternalVPC
   AddRouteDestFunctionVpcToFExternalPublicRouteTable:
     Type: AWS::EC2::Route

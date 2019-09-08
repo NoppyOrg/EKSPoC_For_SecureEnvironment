@@ -45,8 +45,10 @@ Stacks[16]=K8sMgr;    Dirs[16]="./Instances";       Templates[16]="k8smgr.yaml"
 Stacks[17]=HighAuth;  Dirs[17]="./Instances";       Templates[17]="highauth.yaml"
 #EKS
 Stacks[18]=Eks;       Dirs[18]="./Eks";             Templates[18]="eks.yaml"
+Stacks[19]=EksWorker; Dirs[19]="./Eks";             Templates[19]="eks_workernode.yaml"
 
-StacksLAST=18
+
+StacksLAST=19
 
 #--------------------------------------------
 function help(){

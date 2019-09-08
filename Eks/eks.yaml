@@ -7,14 +7,6 @@ Parameters:
     AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
     ConstraintDescription: Can contain only ASCII characters.
     Description: (required) Environment name
-  K8sVersion:
-    Type: String
-    Description: (Optional) Select the Kubernetes version to install.
-    Default: "1.13"
-    AllowedValues:
-      - "1.13"
-      - "1.12"
-      - "1.11"
 #----------------------------------------------
 Resources:
   # K8s Manager(User)

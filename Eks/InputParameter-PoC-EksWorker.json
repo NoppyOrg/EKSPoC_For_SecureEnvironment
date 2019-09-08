@@ -1,0 +1,23 @@
+{
+    "Parameters": [
+        {
+            "ParameterKey": "Environment",
+            "ParameterValue": "PoC"
+        },
+        {
+            "ParameterKey": "ClusterName",
+            "ParameterValue": "PoC-EksCluster"
+        },
+        {
+            "ParameterKey": "NodeImageId",
+            "ParameterValue": "ami-055d09694b6e5591a"
+        },
+        {
+            "ParameterKey": "KeyName",
+            "ParameterValue": "AWS_nobuyuf_common"
+        }
+    ]
+}
+
+
+

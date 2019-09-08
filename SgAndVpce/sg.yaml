@@ -78,7 +78,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      SourceSecurityGroupId: !Ref MgrInstanceSG
+      CidrIp: 0.0.0.0/0
   #--
   EksControlPlaneSG:
     Type: AWS::EC2::SecurityGroup
@@ -98,14 +98,6 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: !Ref MgrInstanceSG
-  EksControlPlaneSGIngressWorkerNodeSG:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref EksControlPlaneSG
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-      SourceSecurityGroupId: !Ref EksWorkerNodeInstanceSG
   #--
   FargateSG:
     Type: AWS::EC2::SecurityGroup
