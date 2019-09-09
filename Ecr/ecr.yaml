@@ -24,6 +24,7 @@ Resources:
             Principal: 
               AWS: 
                 - Fn::ImportValue: !Sub ${Environment}-Iam-DockerDevInstanceRoleArn
+                - Fn::ImportValue: !Sub ${Environment}-Iam-EksWorkerNodeInstanceRoleArn
             Action: 
               - ecr:GetAuthorizationToken
               - ecr:DescribeRepositories
@@ -33,6 +34,7 @@ Resources:
             Principal: 
               AWS: 
                 - Fn::ImportValue: !Sub ${Environment}-Iam-DockerDevInstanceRoleArn
+                - Fn::ImportValue: !Sub ${Environment}-Iam-EksWorkerNodeInstanceRoleArn
             Action: 
               - ecr:GetDownloadUrlForLayer
               - ecr:BatchGetImage
