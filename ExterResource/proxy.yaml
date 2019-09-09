@@ -155,6 +155,10 @@ Resources:
                 #for setup kubectl
                 amazon-eks.s3-us-west-2.amazonaws.com
 
+                #for ekcsct setup
+                github.com
+                github-production-release-asset-2e65be.s3.amazonaws.com
+
                 #for EKS service endpoint 
                 eks.${AWS::Region}.amazonaws.com
                 
