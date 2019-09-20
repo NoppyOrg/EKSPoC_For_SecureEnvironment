@@ -15,7 +15,18 @@
         {
             "ParameterKey": "KeyName",
             "ParameterValue": "AWS_nobuyuf_common"
+        },
+
+        {
+            "ParameterKey": "NodeAutoScalingGroupMaxSize",
+            "ParameterValue": "1"
+        },
+        {
+            "ParameterKey": "NodeAutoScalingGroupDesiredCapacity",
+            "ParameterValue": "1"
         }
+
+        
     ]
 }
 

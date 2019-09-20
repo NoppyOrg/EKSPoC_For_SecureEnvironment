@@ -98,6 +98,16 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: !Ref MgrInstanceSG
+  EksPodSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-EksPodSG
+      GroupDescription: For k8s pod
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-EksPodSG
   #--
   FargateSG:
     Type: AWS::EC2::SecurityGroup
@@ -137,6 +147,11 @@ Outputs:
     Value: !Ref EksControlPlaneSG
     Export:
       Name: !Sub ${AWS::StackName}-EksControlPlaneSGId
+  EksPodSGId:
+    Description: EksPodSG Security Group Id
+    Value: !Ref EksPodSG
+    Export:
+      Name: !Sub ${AWS::StackName}-EksPodSGId
   FargateSGId:
     Description: FargateSG Security Group Id
     Value: !Ref FargateSG

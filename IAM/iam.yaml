@@ -154,7 +154,7 @@ Resources:
         #For EKS
         - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
         - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        #- arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly  #ECRスタックでカスタムのPolicyを付与
   EksWorkerNodeInstanceRolePlofile:
     Type: AWS::IAM::InstanceProfile
     Properties:
