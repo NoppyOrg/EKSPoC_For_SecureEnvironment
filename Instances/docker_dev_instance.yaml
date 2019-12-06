@@ -72,7 +72,7 @@ Resources:
                 sudo yum install -y docker
                 # add proxy setting
                 sudo mkdir -p /etc/systemd/system/docker.service.d
-                cat > sudo mkdir -p /etc/systemd/system/docker.service.d/http-proxy.conf << EOL
+                cat > /etc/systemd/system/docker.service.d/http-proxy.conf << EOL
                 [Service]
               - "Environment=\"HTTPS_PROXY=http://"
               - Fn::ImportValue: !Sub ${Environment}-Proxy-ProxyInstance1PrivateIp

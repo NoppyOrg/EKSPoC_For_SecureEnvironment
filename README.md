@@ -27,6 +27,7 @@ EOL
 aws --profile ${Profile} iam create-role --role-name CloudFormationServiceRole --assume-role-policy-document file://cfn_policy.json
 ```
 作成したIAMロールのArn(` "Arn": "arn:aws:iam::999999999999:role/CloudFormationServiceRole",`)を控えておきます。
+作成したIAMロールにCloudFormationの実行に必要なPolicyをアタッチします。
 ### (1)-(b) デプロイ用シェルのプロファイルとCloudFormationServiceRoleの設定
 デプロイ用のシェル(run_cfn.sh)に実行環境のプロファイルと先ほど作成した CloudFormationServiceRoleのArnを設定します。
 - run_cfn.shをエディタで開き下記を編集します。
@@ -40,6 +41,8 @@ EnvsLast=0
 Role="arn:aws:iam::999999999999:role/CloudFormationServiceRole" #先ほど作成したCloudFormationServiceRoleのArnを設定
 
 ```
+`Eks/InputParameter-PoC-EksWorker.json`、`ExterResource/InputParameter-PoC-Bastion.json`、`ExterResource/InputParameter-PoC-Proxy.json`の`KeyName`パラメータを修正して鍵ペアを指定します。
+
 ### (1)-(c) CloudFormationデプロイ 
 ```shell
 ./run_cfn.sh PoC Iam create
@@ -56,6 +59,7 @@ Role="arn:aws:iam::999999999999:role/CloudFormationServiceRole" #先ほど作成
 ./run_cfn.sh PoC DockerDev create
 ./run_cfn.sh PoC K8sMgr create
 ./run_cfn.sh PoC HighAuth create
+./run_cfn.sh PoC Eks create
 ```
 
 ## (2)EKSクラスター作成
@@ -150,6 +154,9 @@ kubectl get svc
 ## (3) k8sマスターノードへ、WorkerNodeのインスタンスRoleArnを追加
 WorkerNodeを作成し、その後WorkerNodeがEKSクラスター(マスターノードのクラスター)にノード登録されるよう、WorkerNodeのインスタンスロールを追加する。
 ### (3)-(a) WorkerNodeのCloudFormation Stackデプロイ
+コンソールでEKSクラスターの認証機関とAPIエンドポイントを確認し、
+`Eks/InputParameter-PoC-EksWorker.json`の`BootstrapArguments`を修正します。
+
 CloudFormation作業環境で、WorkerNodeのStackをデプロイする
 ```shell
 ./run_cfn.sh PoC EksWorker create
