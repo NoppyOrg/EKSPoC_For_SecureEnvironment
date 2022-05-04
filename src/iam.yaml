@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy IAM Role for Instances
+#----------------------------------------------
+Resources:
+  # EC2インスタンスに付与するインスタンスロールの作成を行う
+  # ここでは、マネージドポリシーのみ付与し、
+  # S3などリソースを意識するポリシーは各リソースデプロイ時にアタッチする
+  #---IAM Role(For Instances)
+  #---
+  EC2HighAuthorityRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  EC2HighAuthorityRoleProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref EC2HighAuthorityRole
+  #--
+  EC2DockerRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  EC2DockerRolePlofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref EC2DockerRole
+  #---
+  EC2kubectlRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  EC2kubectlRolePlofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref EC2kubectlRole
+Outputs:
+  #---------------- IAM Role
+  EC2HighAuthorityRoleArn:
+    Description: Role Arn of EC2HighAuthorityRole
+    Value: !GetAtt EC2HighAuthorityRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2HighAuthorityRoleArn
+  EC2HighAuthorityRoleName:
+    Description: Role Name of EC2HighAuthorityRole
+    Value: !Ref EC2HighAuthorityRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2HighAuthorityRoleName
+  EC2HighAuthorityRoleProfile:
+    Description: Arn of EC2HighAuthorityRoleProfile
+    Value: !Ref EC2HighAuthorityRoleProfile
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2HighAuthorityRoleProfile
+  #--
+  EC2DockerRoleArn:
+    Description: Role Arn of EC2DockerRole
+    Value: !GetAtt EC2DockerRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2DockerRoleArn
+  EC2DockerRoleName:
+    Description: Role Name of EC2DockerRole
+    Value: !Ref EC2DockerRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2DockerRoleName
+  EC2DockerRolePlofile:
+    Description: Arn of EC2DockerRolePlofile
+    Value: !Ref EC2DockerRolePlofile
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2DockerRolePlofile
+  #--
+  EC2kubectlRoleArn:
+    Description: Role Arn of EC2kubectlRole
+    Value: !GetAtt EC2kubectlRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2kubectlRoleArn
+  EC2kubectlRoleName:
+    Description: Role Name of EC2kubectlRole
+    Value: !Ref EC2kubectlRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2kubectlRoleName
+  EC2kubectlRolePlofile:
+    Description: Arn of EC2kubectlRolePlofile
+    Value: !Ref EC2kubectlRolePlofile
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2kubectlRolePlofile

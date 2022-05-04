@@ -1,0 +1,616 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create a VPC with ４ subnet configurations in 2AZ
+#----------------------------------------------
+Parameters:
+  #------------------
+  InternetAccess:
+    Description: (required)If this vpc is required internet access, InternetAccess is true.
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    ConstraintDescription: Must specify true or false.
+  EnableNatGW:
+    Description: (required)If you deploy NatGWs, EnableNatGW is true.
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    ConstraintDescription: Must specify true or false.
+  #------------------
+  VpcInternalDnsNameEnable:
+    Description: (required)If set private hosted zone, VpcInternalDnsNameEnable is true.
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  VpcInternalDnsName: 
+    Description: Route53 Private Hosted zone
+    Type: String
+    AllowedPattern: "^([a-z0-9]+(-[a-z0-9]+)*\\.?)+\\.$"
+    Default: "local."
+    ConstraintDescription: You can use letters (abc), numbers (123) and dashes/hyphens.
+  VpcName:
+    Description: Name for the VPC
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-_].*"
+    Default: MainVPC
+    ConstraintDescription: Can contain only ASCII characters.
+  VpcCidr:
+    Description: CIDR Block for the  VPC
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 10.1.0.0/16
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: Must be like 10.1.0.0/16
+  DnsSupport:
+    Type: String
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  DnsHostnames:
+    Type: String
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  #---
+  DhcpOptionsDomainNameServers1:
+    Description: "The IPv4 addresses of a 1st domain name servers, or AmazonProvidedDNS"
+    Type: String
+    Default: "AmazonProvidedDNS"
+  DhcpOptionsDomainNameServers2:
+    Description: "The IPv4 addresses of a 2nd domain name servers, or Blank"
+    Type: String
+    Default: ""
+  DhcpOptionsNtpServers1:
+    Description: "The IPv4 addresses of a 1st Network Time Protocol (NTP) servers."
+    Type: String
+    Default: 169.254.169.123
+  DhcpOptionsNtpServers2:
+    Description: "The IPv4 addresses of a 2nd Network Time Protocol (NTP) servers or blank."
+    Type: String
+    Default: ""
+  #---
+  PublicSubnet1Name:
+    Description: Name for the Public Subnet 1
+    Type: String
+    Default: PublicSub1
+    AllowedPattern: "[a-zA-Z0-9=-_].*"
+    ConstraintDescription: Can contain only ASCII characters.
+  PublicSubnet1Cidr:
+    Description: CIDR Block for the  pubulic subnet 1
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 10.1.0.0/24
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: Must be like 10.1.1.0/24
+  #---
+  PublicSubnet2Name:
+    Description: Name for the Public Subnet 2
+    Type: String
+    Default: PublicSub2
+    AllowedPattern: "[a-zA-Z0-9=-_].*"
+    ConstraintDescription: Can contain only ASCII characters.
+  PublicSubnet2Cidr:
+    Description: CIDR Block for the  pubulic subnet 2
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 10.1.16.0/24
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: Must be like 10.1.1.0/24
+  #---
+  PrivateSubnet1Name:
+    Description: Name for the Private Subnet 1
+    Type: String
+    Default: PrivateSub1
+    AllowedPattern: "[a-zA-Z0-9=-_].*"
+    ConstraintDescription: Can contain only ASCII characters.
+  PrivateSubnet1Cidr:
+    Description: CIDR Block for the  private subnet 1
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 10.1.32.0/19
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: Must be like 10.1.1.0/24
+  #---
+  PrivateSubnet2Name:
+    Description: Name for the Private Subnet 2
+    Type: String
+    Default: PrivateSub2
+    AllowedPattern: "[a-zA-Z0-9=-_].*"
+    ConstraintDescription: Can contain only ASCII characters.
+  PrivateSubnet2Cidr:
+    Description: CIDR Block for the  private subnet 2
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 10.1.128.0/19
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: Must be like 10.1.1.0/24
+  #---
+  EnvironmentName:
+    Description: If you do not give an environment name, do not enter anything.
+    Type: String
+    Default: ""
+  #------------------
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      -
+        Label:
+          default: "Environment"
+        Parameters:
+          - EnvironmentName
+      -
+        Label:
+          default: "VPC Configurations"
+        Parameters:
+          - InternetAccess
+          - EnableNatGW
+          - VpcName
+          - VpcCidr
+          - DnsSupport
+          - DnsHostnames
+      -
+        Label:
+          default: "VPC DHCP Options Configurations"
+        Parameters:
+          - DhcpOptionsDomainNameServers1
+          - DhcpOptionsDomainNameServers2
+          - DhcpOptionsNtpServers1
+          - DhcpOptionsNtpServers2
+      -
+        Label:
+          default: "Subnets Configurations"
+        Parameters:
+          - PublicSubnet1Name
+          - PublicSubnet1Cidr
+          - PublicSubnet2Name
+          - PublicSubnet2Cidr
+          - PrivateSubnet1Name
+          - PrivateSubnet1Cidr
+          - PrivateSubnet2Name
+          - PrivateSubnet2Cidr
+      -
+        Label:
+          default: "Private Hosted zone"
+        Parameters:
+          - VpcInternalDnsNameEnable
+          - VpcInternalDnsName
+#----------------------------------------------
+Conditions: 
+  CheckInternetAccess: !Equals [ !Ref InternetAccess, true ]
+  CreateNatGWs: !And [ !Equals [ !Ref InternetAccess, true ], !Equals [ !Ref EnableNatGW, true ] ]
+  CheckVpcInternalDnsNameEnable: !Equals [ !Ref VpcInternalDnsNameEnable, true ]
+  CheckEnvironment: !Not [ !Equals [ !Ref EnvironmentName, "" ] ]
+#----------------------------------------------
+Resources:
+  #------------------ VPC FlowLog Role
+  FlowlogRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - vpc-flow-logs.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        -
+          PolicyName: "Flowlog"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: Allow
+                Action: 
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:DescribeLogGroups"
+                  - "logs:DescribeLogStreams"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+  #------------------ VPC
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: !Ref DnsSupport
+      EnableDnsHostnames: !Ref DnsHostnames
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}
+              - !Sub ${VpcName}
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  #------------------ DHCP Options
+  DhcpOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainNameServers:
+        - !Ref DhcpOptionsDomainNameServers1
+        - !Ref DhcpOptionsDomainNameServers2
+      NtpServers: 
+        - !Ref DhcpOptionsNtpServers1
+        - !Ref DhcpOptionsNtpServers2
+      Tags: 
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-DhcpOptions
+              - !Sub ${VpcName}-DhcpOptions
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  AssociationDhcpOptionsToVpc:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref DhcpOptions
+      VpcId: !Ref Vpc
+  #------------------ Internet GW
+  Igw:
+    Type: AWS::EC2::InternetGateway
+    Condition: CheckInternetAccess
+    Properties:
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-IGW
+              - !Sub ${VpcName}-IGW
+  AttachIgw:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: CheckInternetAccess
+    Properties:
+      InternetGatewayId: !Ref Igw
+      VpcId: !Ref Vpc
+    DependsOn:
+      - Vpc
+      - Igw
+  #------------------ Subnet
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PublicSubnet1Cidr
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select
+      - 0
+      - Fn::GetAZs: !Ref 'AWS::Region'
+      MapPublicIpOnLaunch:
+        Fn::If:
+          - CheckInternetAccess
+          - true
+          - false
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-${PublicSubnet1Name}
+              - !Sub ${VpcName}-${PublicSubnet1Name}
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PublicSubnet2Cidr
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select
+      - 1
+      - Fn::GetAZs: !Ref 'AWS::Region'
+      MapPublicIpOnLaunch:
+        Fn::If:
+          - CheckInternetAccess
+          - true
+          - false
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-${PublicSubnet2Name}
+              - !Sub ${VpcName}-${PublicSubnet2Name}
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PrivateSubnet1Cidr
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select
+      - 0
+      - Fn::GetAZs: !Ref 'AWS::Region'
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-${PrivateSubnet1Name}
+              - !Sub ${VpcName}-${PrivateSubnet1Name}
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PrivateSubnet2Cidr
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select
+      - 1
+      - Fn::GetAZs: !Ref 'AWS::Region'
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-${PrivateSubnet2Name}
+              - !Sub ${VpcName}-${PrivateSubnet2Name}
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  #------------------ Nat GW
+  NatGw1:
+    Type: AWS::EC2::NatGateway
+    Condition: CreateNatGWs
+    DependsOn: AttachIgw
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EipNatGw1
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet1
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-NatGW1
+              - !Sub ${VpcName}-NatGW1
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  EipNatGw1:
+    Type: AWS::EC2::EIP
+    Condition: CreateNatGWs
+    Properties:
+      Domain: vpc
+  #---
+  NatGw2:
+    Type: AWS::EC2::NatGateway
+    Condition: CreateNatGWs
+    DependsOn: AttachIgw
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EipNatGw2
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet2
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-NatGW2
+              - !Sub ${VpcName}-NatGW2
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  EipNatGw2:
+    Type: AWS::EC2::EIP
+    Condition: CreateNatGWs
+    Properties:
+      Domain: vpc
+  #------------------ Route Table
+  #----------  VPC Public Route Table
+  PublicSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-PubSubRouteTable
+              - !Sub ${VpcName}-PubSubRouteTable
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  VpcInternetRote:
+    Type: AWS::EC2::Route
+    Condition: CheckInternetAccess
+    Properties:
+      RouteTableId: !Ref PublicSubnetRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Igw
+    DependsOn:
+      - AttachIgw
+  #----
+  PrivateSubnet1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-PrivateSubRouteTable1
+              - !Sub ${VpcName}-PrivateSubRouteTable1
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  VpcNatGw1Rote:
+    Type: AWS::EC2::Route
+    Condition: CreateNatGWs
+    Properties:
+      RouteTableId: !Ref PrivateSubnet1RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGw1
+  #----
+  PrivateSubnet2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value:
+            Fn::If:
+              - CheckEnvironment
+              - !Sub ${EnvironmentName}-${VpcName}-PrivateSubRouteTable2
+              - !Sub ${VpcName}-PrivateSubRouteTable2
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  VpcNatGw2Rote:
+    Type: AWS::EC2::Route
+    Condition: CreateNatGWs
+    Properties:
+      RouteTableId: !Ref PrivateSubnet2RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGw2
+  #---- Attache to subnets in the  VPC
+  PublicSubnetRouteTableAssociationPublicSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicSubnetRouteTable
+  PublicSubnetRouteTableAssociationPublicSubnet2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicSubnetRouteTable
+  #----
+  PrivateSubnet1RouteTableAssociationPrivateSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateSubnet1RouteTable 
+  PrivateSubnet2RouteTableAssociationPrivateSubnet2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateSubnet2RouteTable
+  #------------------ Local Domain Name
+  VpcInternalDns:
+    Type: AWS::Route53::HostedZone
+    Condition: CheckVpcInternalDnsNameEnable
+    Properties:
+      HostedZoneConfig:
+        Comment: "Resource DNS for  VPC"
+      Name: !Ref VpcInternalDnsName
+      VPCs:
+        - VPCId: !Ref Vpc
+          VPCRegion: !Ref AWS::Region
+  #------------------ Cloudwatch log for Flowlog
+  VPCFlowlog:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt FlowlogRole.Arn
+      LogGroupName: !Sub VPCFlowLogs/${VpcName}
+      ResourceId: !Ref Vpc
+      ResourceType: VPC
+      TrafficType: ALL
+Outputs:
+  #------------------ VPC
+  VpcId:
+    Description:  VPC ID
+    Value: !Ref Vpc
+    Export:
+      Name: !Sub "${AWS::StackName}-VpcId"
+  VpcCidr:
+    Description:  VPC CIDR
+    Value: !Ref VpcCidr
+    Export:
+      Name: !Sub "${AWS::StackName}-VpcCidr"
+  #------------------ Subnet ID
+  PublicSubnet1Id:
+    Description: Public Subnet1 ID in the VPC
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet1Id"
+  PublicSubnet2Id:
+    Description: Public Subnet2 ID in the VPC
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet2Id"
+  PrivateSubnet1Id:
+    Description: Private Subnet1 ID in the VPC
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateSubnet1Id"
+  PrivateSubnet2Id:
+    Description: Private Subnet2 ID in the VPC
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateSubnet2Id"
+  #------------------ Subnet CIDR
+  PublicSubnet1Cidr:
+    Description: CIDR of Public Subnet1 in the VPC
+    Value: !Ref PublicSubnet1Cidr
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet1Cidr"
+  PublicSubnet2Cidr:
+    Description: CIDR of Public Subnet2 in the VPC
+    Value: !Ref PublicSubnet2Cidr
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet2Cidr"
+  PrivateSubnet1Cidr:
+    Description: CIDR of Private Subnet1 in the VPC
+    Value: !Ref PrivateSubnet1Cidr
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateSubnet1Cidr"
+  PrivateSubnet2Cidr:
+    Description: CIDR of Private Subnet2 in the VPC
+    Value: !Ref PrivateSubnet2Cidr
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateSubnet2Cidr"
+  #------------------ route tables
+  PublicSubnetRouteTableId:
+    Description: Route table for Public Subnet
+    Value: !Ref PublicSubnetRouteTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnetRouteTableId"
+  PrivateSubnet1RouteTableId:
+    Description: Route table for Private Subnet1
+    Value: !Ref PrivateSubnet1RouteTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateSubnet1RouteTableId"
+  PrivateSubnet2RouteTableId:
+    Description: Route table for Private Subnet2
+    Value: !Ref PrivateSubnet2RouteTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateSubnet2RouteTableId"
+  #------------------ Resource DNS name
+  VpcInternalDnsName:
+    Description: Resource DNS zone name in the  Vpc
+    Condition: CheckVpcInternalDnsNameEnable
+    Value: !Ref VpcInternalDnsName
+    Export:
+      Name: !Sub ${AWS::StackName}-VpcInternalDnsName
+  VpcInternalDnsId:
+    Description: Resource DNS zone id in the  VPC
+    Condition: CheckVpcInternalDnsNameEnable
+    Value: !Ref VpcInternalDns
+    Export:
+      Name: !Sub ${AWS::StackName}-VpcInternalDnsId
+  #------------------ Default setting
+  DefaultSecurityGroupId:
+    Description: Default Security Group Id
+    Value: !GetAtt Vpc.DefaultSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-DefaultSecurityGroupId
+      
+      

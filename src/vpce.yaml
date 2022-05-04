@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy VPCEndpoints
+#----------------------------------------------
+Resources:
+  S3VpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Gateway
+      VpcId:
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      RouteTableIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1RouteTableId
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2RouteTableId
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:*'
+            Resource:
+              # Allow connections to the Amazon Linux2 yum repositories
+              - !Sub "arn:aws:s3:::amazonlinux.${AWS::Region}.amazonaws.com/*"
+              - !Sub "arn:aws:s3:::amazonlinux-2-repos-${AWS::Region}/*"
+              # For ECR
+              - !Sub "arn:aws:s3:::prod-${AWS::Region}-starport-layer-bucket/*"
