@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy ECR Repository
+#----------------------------------------------
+Resources:
+  #------------------ ECR repository
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "ekspoc-repo"
+      ImageScanningConfiguration: 
+         ScanOnPush: true
+      #LifecyclePolicy:
+      RepositoryPolicyText:
+        Version: 2008-10-17
+        Statement:
+          -
+            Sid: GetAuthorizationToken
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - Fn::ImportValue: EksPoc-IAM-EC2DockerRoleArn
+                - Fn::ImportValue: EksPoc-IAM-EC2k8sWorkerRoleArn
+            Action: 
+              - ecr:GetAuthorizationToken
+              - ecr:DescribeRepositories
+          - 
+            Sid: AllowPushPull
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - Fn::ImportValue: EksPoc-IAM-EC2DockerRoleArn
+            Action: 
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+              - ecr:BatchCheckLayerAvailability
+              - ecr:PutImage
+              - ecr:InitiateLayerUpload
+              - ecr:UploadLayerPart
+              - ecr:CompleteLayerUpload
+          -
+            Sid: AllowPullOnly
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - Fn::ImportValue: EksPoc-IAM-EC2k8sWorkerRoleArn
+            Action: 
+              - ecr:BatchCheckLayerAvailability
+              - ecr:GetDownloadUrlForLayer
+      Tags: 
+        -
+          Key: Name
+          Value: PoCEcrRepository
+  #------------------ VPC Endpoints for the ECR repository
+  EcrDkrEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.dkr"
+      PrivateDnsEnabled: yes
+      SubnetIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+      SecurityGroupIds: 
+        - Fn::ImportValue: EksPoc-SG-VpceSGId
+      PolicyDocument:
+        Statement:
+          - 
+            Effect: Allow
+            Principal: "*" 
+            Action:
+              - "ecr:*"
+            Resource:
+              - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+  #--
+  EcrApiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.api"
+      PrivateDnsEnabled: yes
+      SubnetIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+      SecurityGroupIds: 
+        - Fn::ImportValue: EksPoc-SG-VpceSGId
+      PolicyDocument:
+        Statement:
+          - 
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
+            Action:
+              - "ecr:GetAuthorizationToken"
+            Resource: "*"
+          - 
+            Effect: Allow
+            Principal: "*" 
+            NotAction:
+              - "ecr:GetAuthorizationToken"
+            Resource:
+              - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+Outputs:
+  #---------------- EC2 Instance
+  EcrRepositoryId:
+    Description: Ecr Repository ID
+    Value: !Ref EcrRepository
+    Export:
+      Name: !Sub ${AWS::StackName}-EcrRepositoryId
+  EcrRepositoryArn:
+    Description: Ecr Repository Arn
+    Value: !GetAtt EcrRepository.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EcrRepositoryArn

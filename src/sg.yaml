@@ -77,6 +77,14 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: !Ref EksWorkerSG
+  AllowHttpsToBastionSGEksAdminSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksCtlPlaneSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref BastionSG
   #------------------ Security Groups for VPCE
   VpceSG:
     Type: AWS::EC2::SecurityGroup

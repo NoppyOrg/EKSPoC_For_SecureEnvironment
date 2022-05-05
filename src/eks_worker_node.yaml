@@ -1,0 +1,313 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Amazon EKS - Node Group
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+  #----
+  ClusterName:
+    Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
+    Type: String
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+  NodeImageId:
+    Description: AMI id for the node instances.
+    Type: AWS::EC2::Image::Id
+  NodeInstanceType:
+    Description: (Optional)EC2 instance type for the node instances
+    Type: String
+    Default: t3.medium
+    ConstraintDescription: Must be a valid EC2 instance type
+    AllowedValues:
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - r4.large
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - x1.16xlarge
+      - x1.32xlarge
+      - p2.xlarge
+      - p2.8xlarge
+      - p2.16xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
+      - p3dn.24xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.12xlarge
+      - r5.24xlarge
+      - r5d.large
+      - r5d.xlarge
+      - r5d.2xlarge
+      - r5d.4xlarge
+      - r5d.12xlarge
+      - r5d.24xlarge
+      - z1d.large
+      - z1d.xlarge
+      - z1d.2xlarge
+      - z1d.3xlarge
+      - z1d.6xlarge
+      - z1d.12xlarge
+  NodeAutoScalingGroupMinSize:
+    Description: (Optional)Minimum size of Node Group ASG.
+    Type: Number
+    Default: 1
+  NodeAutoScalingGroupMaxSize:
+    Description: (Optional)Maximum size of Node Group ASG. Set to at least 1 greater than NodeAutoScalingGroupDesiredCapacity.
+    Type: Number
+    Default: 4
+  NodeAutoScalingGroupDesiredCapacity:
+    Description: (Optional)Desired capacity of Node Group ASG.
+    Type: Number
+    Default: 2
+  NodeVolumeSize:
+    Description: (Optional)Node volume size
+    Type: Number
+    Default: 20
+  BootstrapArguments:
+    Description: (Optional)Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
+    Type: String
+    Default: ""
+
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: General
+        Parameters:
+          - Environment
+      - Label:
+          default: EKS Cluster
+        Parameters:
+          - ClusterName
+      - Label:
+          default: Worker Node Configuration
+        Parameters:
+          - KeyName
+          - NodeAutoScalingGroupMinSize
+          - NodeAutoScalingGroupDesiredCapacity
+          - NodeAutoScalingGroupMaxSize
+          - NodeInstanceType
+          - NodeImageId
+          - NodeVolumeSize
+          - BootstrapArguments
+
+Resources:
+  # WorkerNode Security Group
+  NodeSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow node to communicate with each other
+      GroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksWorkerNodeInstanceSGId
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksWorkerNodeInstanceSGId
+      IpProtocol: -1
+      FromPort: 0
+      ToPort: 65535
+  NodeSecurityGroupFromControlPlaneIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow worker Kubelets and pods to receive communication from the cluster control plane
+      GroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksWorkerNodeInstanceSGId
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksControlPlaneSGId
+      IpProtocol: tcp
+      FromPort: 1025
+      ToPort: 65535
+  NodeSecurityGroupFromControlPlaneOn443Ingress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow pods running extension API servers on port 443 to receive communication from cluster control plane
+      GroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksWorkerNodeInstanceSGId
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksControlPlaneSGId
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+  # EKS ControlPlane Security Group
+  ControlPlaneEgressToNodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Allow the cluster control plane to communicate with worker Kubelet and pods
+      GroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksControlPlaneSGId
+      DestinationSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksWorkerNodeInstanceSGId
+      IpProtocol: tcp
+      FromPort: 1025
+      ToPort: 65535
+  ControlPlaneEgressToNodeSecurityGroupOn443:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Allow the cluster control plane to communicate with pods running extension API servers on port 443
+      GroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksControlPlaneSGId
+      DestinationSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksWorkerNodeInstanceSGId
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+  ClusterControlPlaneSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow pods to communicate with the cluster API Server
+      GroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksControlPlaneSGId
+      SourceSecurityGroupId: 
+        Fn::ImportValue: !Sub ${Environment}-Sg-EksWorkerNodeInstanceSGId
+      IpProtocol: tcp
+      ToPort: 443
+      FromPort: 443
+  #----------------------------------------------
+  # AutoScaling Group
+  NodeGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      DesiredCapacity: !Ref NodeAutoScalingGroupDesiredCapacity
+      LaunchTemplate: 
+        LaunchTemplateId: !Ref WorkerNodeTemplate
+        Version: !GetAtt WorkerNodeTemplate.LatestVersionNumber
+      MinSize: !Ref NodeAutoScalingGroupMinSize
+      MaxSize: !Ref NodeAutoScalingGroupMaxSize
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClusterName}-Worker-Nodes
+          PropagateAtLaunch: true
+        - Key: !Sub kubernetes.io/cluster/${ClusterName}
+          Value: owned
+          PropagateAtLaunch: true
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 1
+        MinInstancesInService: !Ref NodeAutoScalingGroupDesiredCapacity
+        PauseTime: PT5M
+  #---
+  WorkerNodeTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: WorkerNodeTemplate
+      LaunchTemplateData:
+        ImageId: !Ref NodeImageId
+        InstanceType: !Ref NodeInstanceType
+        KeyName: !Ref KeyName
+        IamInstanceProfile:
+          Name:
+            Fn::ImportValue: !Sub ${Environment}-Iam-EksWorkerNodeInstanceRolePlofile
+        SecurityGroupIds:
+          -  Fn::ImportValue: !Sub ${Environment}-Sg-EksWorkerNodeInstanceSGId
+        Monitoring:
+          Enabled: true
+        Monitoring:
+          Enabled: true
+        TagSpecifications:
+          -
+            ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub ${Environment}-WorkerNode
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: !Ref NodeVolumeSize
+              VolumeType: gp2
+              DeleteOnTermination: true
+        UserData:
+          Fn::Base64:
+            Fn::Join:
+              - ""
+              - - !Sub |
+                  #!/bin/bash
+                  # Update ALL rpms, and change hostname to Userfrendly name 
+                  yum -y update
+                  HOST_NAME="$(curl http://169.254.169.254/latest/meta-data/local-hostname 2>/dev/null |awk -F '.' '{print $1}').${Environment}-worker-node.${AWS::Region}"
+                  hostnamectl set-hostname "${!HOST_NAME}"
+
+                  # Setup AWS CLI
+                  aws configure set region ${AWS::Region}
+                  aws configure set output json
+
+                  # Setup proxy for AWS CLI
+                - "FowardProxyIP="
+                - Fn::ImportValue: !Sub ${Environment}-Proxy-ProxyInstance1PrivateIp
+                - "\n"
+                - !Sub |
+                  FowardProxyPort=3128
+                  export https_proxy=http://${!FowardProxyIP}:${!FowardProxyPort}
+                  export no_proxy=169.254.169.254
+            
+                  # Setup an instance into an EKS cluster
+                  set -o xtrace
+                  /etc/eks/bootstrap.sh ${ClusterName} ${BootstrapArguments}
+
+                  #Unset Proxy environmet value
+                  unset https_proxy no_proxy
+
+                  #Finish
+                  /opt/aws/bin/cfn-signal --exit-code $? \
+                          --stack  ${AWS::StackName} \
+                          --resource NodeGroup  \
+                          --region ${AWS::Region}
