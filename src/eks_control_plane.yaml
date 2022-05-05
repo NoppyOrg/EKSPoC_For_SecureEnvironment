@@ -32,11 +32,11 @@ Resources:
       Logging:
         ClusterLogging:
            EnabledTypes:
-            - api
-            - audit
-            - authenticator
-            - controllerManager
-            - scheduler
+            - Type: api
+            - Type: audit
+            - Type: authenticator
+            - Type: controllerManager
+            - Type: scheduler
       EncryptionConfig: 
         - 
           Provider: 
@@ -46,15 +46,25 @@ Resources:
             - secrets
 #----------------------------------------------
 Outputs:
+  ClusterName:
+    Value: !Ref ClusterName
+    Export:
+      Name: !Sub ${AWS::StackName}-ClusterName
   ControlPlaneArn:
     Value: !GetAtt ControlPlane.Arn
     Export:
       Name: !Sub ${AWS::StackName}-ControlPlaneArn
   CertificateAuthorityData:
     Value: !GetAtt ControlPlane.CertificateAuthorityData
-    Export:
-      Name: !Sub ${AWS::StackName}-CertificateAuthorityData
   ControlPlaneEndpoint:
     Value: !GetAtt ControlPlane.Endpoint
     Export:
       Name: !Sub ${AWS::StackName}-ControlPlaneEndpoint
+  OpenIdConnectIssuerUrl:
+    Value: !GetAtt ControlPlane.OpenIdConnectIssuerUrl
+    Export:
+      Name: !Sub ${AWS::StackName}-OpenIdConnectIssuerUrl
+
+
+
+      

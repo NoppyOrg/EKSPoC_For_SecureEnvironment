@@ -1,0 +1,746 @@
+<!DOCTYPE html><html><head>
+      <title>README</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:////Users/nobuyuf/.vscode/extensions/shd101wyy.markdown-preview-enhanced-0.6.2/node_modules/@shd101wyy/mume/dependencies/katex/katex.min.css">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      <style>
+      /**
+ * prism.js Github theme based on GitHub's theme.
+ * @author Sam Clarke
+ */
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #333;
+  background: none;
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.4;
+
+  -moz-tab-size: 8;
+  -o-tab-size: 8;
+  tab-size: 8;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: .8em;
+  overflow: auto;
+  /* border: 1px solid #ddd; */
+  border-radius: 3px;
+  /* background: #fff; */
+  background: #f5f5f5;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+  white-space: normal;
+  background: #f5f5f5;
+}
+
+.token.comment,
+.token.blockquote {
+  color: #969896;
+}
+
+.token.cdata {
+  color: #183691;
+}
+
+.token.doctype,
+.token.punctuation,
+.token.variable,
+.token.macro.property {
+  color: #333;
+}
+
+.token.operator,
+.token.important,
+.token.keyword,
+.token.rule,
+.token.builtin {
+  color: #a71d5d;
+}
+
+.token.string,
+.token.url,
+.token.regex,
+.token.attr-value {
+  color: #183691;
+}
+
+.token.property,
+.token.number,
+.token.boolean,
+.token.entity,
+.token.atrule,
+.token.constant,
+.token.symbol,
+.token.command,
+.token.code {
+  color: #0086b3;
+}
+
+.token.tag,
+.token.selector,
+.token.prolog {
+  color: #63a35c;
+}
+
+.token.function,
+.token.namespace,
+.token.pseudo-element,
+.token.class,
+.token.class-name,
+.token.pseudo-class,
+.token.id,
+.token.url-reference .token.variable,
+.token.attr-name {
+  color: #795da3;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+.token.title,
+.token.title .token.punctuation {
+  font-weight: bold;
+  color: #1d3e81;
+}
+
+.token.list {
+  color: #ed6a43;
+}
+
+.token.inserted {
+  background-color: #eaffea;
+  color: #55a532;
+}
+
+.token.deleted {
+  background-color: #ffecec;
+  color: #bd2c00;
+}
+
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+
+/* JSON */
+.language-json .token.property {
+  color: #183691;
+}
+
+.language-markup .token.tag .token.punctuation {
+  color: #333;
+}
+
+/* CSS */
+code.language-css,
+.language-css .token.function {
+  color: #0086b3;
+}
+
+/* YAML */
+.language-yaml .token.atrule {
+  color: #63a35c;
+}
+
+code.language-yaml {
+  color: #183691;
+}
+
+/* Ruby */
+.language-ruby .token.function {
+  color: #333;
+}
+
+/* Markdown */
+.language-markdown .token.url {
+  color: #795da3;
+}
+
+/* Makefile */
+.language-makefile .token.symbol {
+  color: #795da3;
+}
+
+.language-makefile .token.variable {
+  color: #183691;
+}
+
+.language-makefile .token.builtin {
+  color: #0086b3;
+}
+
+/* Bash */
+.language-bash .token.keyword {
+  color: #0086b3;
+}
+
+/* highlight */
+pre[data-line] {
+  position: relative;
+  padding: 1em 0 1em 3em;
+}
+pre[data-line] .line-highlight-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: transparent;
+  display: block;
+  width: 100%;
+}
+
+pre[data-line] .line-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: inherit 0;
+  margin-top: 1em;
+  background: hsla(24, 20%, 50%,.08);
+  background: linear-gradient(to right, hsla(24, 20%, 50%,.1) 70%, hsla(24, 20%, 50%,0));
+  pointer-events: none;
+  line-height: inherit;
+  white-space: pre;
+}
+
+pre[data-line] .line-highlight:before, 
+pre[data-line] .line-highlight[data-end]:after {
+  content: attr(data-start);
+  position: absolute;
+  top: .4em;
+  left: .6em;
+  min-width: 1em;
+  padding: 0 .5em;
+  background-color: hsla(24, 20%, 50%,.4);
+  color: hsl(24, 20%, 95%);
+  font: bold 65%/1.5 sans-serif;
+  text-align: center;
+  vertical-align: .3em;
+  border-radius: 999px;
+  text-shadow: none;
+  box-shadow: 0 1px white;
+}
+
+pre[data-line] .line-highlight[data-end]:after {
+  content: attr(data-end);
+  top: auto;
+  bottom: .4em;
+}html body{font-family:"Helvetica Neue",Helvetica,"Segoe UI",Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ul,html body>ol{margin-bottom:16px}html body ul,html body ol{padding-left:2em}html body ul.no-list,html body ol.no-list{padding:0;list-style-type:none}html body ul ul,html body ul ol,html body ol ol,html body ol ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:bold;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:bold}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em !important;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::before,html body code::after{letter-spacing:-0.2em;content:"\00a0"}html body pre>code{padding:0;margin:0;font-size:.85em !important;word-break:normal;white-space:pre;background:transparent;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;font-size:.85em !important;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:before,html body pre tt:before,html body pre code:after,html body pre tt:after{content:normal}html body p,html body blockquote,html body ul,html body ol,html body dl,html body pre{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body pre,html body code{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview .pagebreak,.markdown-preview .newpage{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center !important}.markdown-preview:not([for="preview"]) .code-chunk .btn-group{display:none}.markdown-preview:not([for="preview"]) .code-chunk .status{display:none}.markdown-preview:not([for="preview"]) .code-chunk .output-div{margin-bottom:16px}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,0.66);border:4px solid rgba(150,150,150,0.66);background-clip:content-box}html body[for="html-export"]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for="html-export"]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0}@media screen and (min-width:914px){html body[for="html-export"]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for="html-export"]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for="html-export"]:not([data-presentation-mode]) .markdown-preview{font-size:14px !important;padding:1em}}@media print{html body[for="html-export"]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for="html-export"]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,0.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,0.66);border:4px solid rgba(150,150,150,0.66);background-clip:content-box}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc ul{padding:0 1.6em;margin-top:.8em}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc li{margin-bottom:.8em}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc ul{list-style-type:none}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% -  300px);padding:2em calc(50% - 457px -  150px);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for="html-export"]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for="html-export"]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+    </head>
+    <body for="html-export">
+      <div class="mume markdown-preview  ">
+      <h1 class="mume-header" id="cloudformation-eks-poc-for-secure-environment">CloudFormation: EKS PoC For Secure Environment</h1>
+
+<p>&#x30BB;&#x30AD;&#x30E5;&#x30A2;&#x306A;&#x74B0;&#x5883;&#x3067;EKS&#x3092;&#x5229;&#x7528;&#x3059;&#x308B;&#x305F;&#x3081;&#x306E;&#x691C;&#x8A3C;&#x7528;&#x74B0;&#x5883;&#x3092;&#x4F5C;&#x6210;&#x3059;&#x308B;CloudFormation&#x30C6;&#x30F3;&#x30D7;&#x30EC;&#x30FC;&#x30C8;&#x3067;&#x3059;&#x3002;</p>
+<h1 class="mume-header" id="%E4%BD%9C%E6%88%90%E7%92%B0%E5%A2%83">&#x4F5C;&#x6210;&#x74B0;&#x5883;</h1>
+
+<p><img src="./Documents/EKS_PoC.png" alt="CFn_configuration"></p>
+<h1 class="mume-header" id="%E4%BD%9C%E6%88%90%E6%89%8B%E9%A0%86">&#x4F5C;&#x6210;&#x624B;&#x9806;</h1>
+
+<h2 class="mume-header" id="1%E4%BA%8B%E5%89%8D%E8%A8%AD%E5%AE%9A">(1)&#x4E8B;&#x524D;&#x8A2D;&#x5B9A;</h2>
+
+<h3 class="mume-header" id="1-a-%E4%BD%9C%E6%A5%AD%E7%92%B0%E5%A2%83%E3%81%AE%E6%BA%96%E5%82%99">(1)-(a) &#x4F5C;&#x696D;&#x74B0;&#x5883;&#x306E;&#x6E96;&#x5099;</h3>
+
+<p>&#x4E0B;&#x8A18;&#x3092;&#x6E96;&#x5099;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+<ul>
+<li>bash&#x304C;&#x5229;&#x7528;&#x53EF;&#x80FD;&#x306A;&#x74B0;&#x5883;(Linux&#x3084;Mac&#x306E;&#x74B0;&#x5883;)</li>
+<li>aws-cli&#x306E;&#x30BB;&#x30C3;&#x30C8;&#x30A2;&#x30C3;&#x30D7;</li>
+<li>AdministratorAccess&#x30DD;&#x30EA;&#x30B7;&#x30FC;&#x304C;&#x4ED8;&#x4E0E;&#x3055;&#x308C;&#x5B9F;&#x884C;&#x53EF;&#x80FD;&#x306A;&#x3001;aws-cli&#x306E;Profile&#x306E;&#x8A2D;&#x5B9A;</li>
+</ul>
+<h3 class="mume-header" id="1-b-git%E3%81%AEclone">(1)-(b) git&#x306E;clone</h3>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token function">git</span> clone https://github.com/Noppy/EKSPoC_For_SecureEnvironment.git
+<span class="token builtin class-name">cd</span> EKSPoC_For_SecureEnvironment
+</pre><h3 class="mume-header" id="1-c-cli%E5%AE%9F%E8%A1%8C%E7%94%A8%E3%81%AE%E4%BA%8B%E5%89%8D%E6%BA%96%E5%82%99">(1)-(c) CLI&#x5B9F;&#x884C;&#x7528;&#x306E;&#x4E8B;&#x524D;&#x6E96;&#x5099;</h3>
+
+<p>&#x3053;&#x308C;&#x4EE5;&#x964D;&#x306E;AWS-CLI&#x3067;&#x5171;&#x901A;&#x3067;&#x5229;&#x7528;&#x3059;&#x308B;&#x30D1;&#x30E9;&#x30E1;&#x30FC;&#x30BF;&#x3092;&#x74B0;&#x5883;&#x5909;&#x6570;&#x3067;&#x8A2D;&#x5B9A;&#x3057;&#x3066;&#x304A;&#x304D;&#x307E;&#x3059;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token builtin class-name">export</span> <span class="token assign-left variable">PROFILE</span><span class="token operator">=</span><span class="token operator">&lt;</span>PoC&#x74B0;&#x5883;&#x306E;AdmministratorAccess&#x6A29;&#x9650;&#x304C;&#x5B9F;&#x884C;&#x53EF;&#x80FD;&#x306A;&#x30D7;&#x30ED;&#x30D5;&#x30A1;&#x30A4;&#x30EB;<span class="token operator">&gt;</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">REGION</span><span class="token operator">=</span><span class="token string">&quot;ap-northeast-1&quot;</span>
+
+<span class="token comment">#&#x30D7;&#x30ED;&#x30D5;&#x30A1;&#x30A4;&#x30EB;&#x306E;&#x52D5;&#x4F5C;&#x30C6;&#x30B9;&#x30C8;</span>
+<span class="token comment">#COMPUTE_PROFILE</span>
+aws --profile <span class="token variable">${PROFILE}</span> sts get-caller-identity
+</pre><h2 class="mume-header" id="2network%E6%BA%96%E5%82%99">(2)Network&#x6E96;&#x5099;</h2>
+
+<h3 class="mume-header" id="2-a-vpc%E4%BD%9C%E6%88%90">(2)-(a) VPC&#x4F5C;&#x6210;</h3>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-VPC <span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/vpc-2az-4subnets.yaml&quot;</span> <span class="token punctuation">\</span>
+        --parameters <span class="token string">&quot;file://./src/vpc.conf&quot;</span> <span class="token punctuation">\</span>
+        --capabilities CAPABILITY_IAM <span class="token punctuation">;</span>
+</pre><h3 class="mume-header" id="2-b-securitygroup%E4%BD%9C%E6%88%90">(2)-(b) SecurityGroup&#x4F5C;&#x6210;</h3>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-SG <span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/sg.yaml&quot;</span>
+</pre><h3 class="mume-header" id="3-c-vpc%E3%82%A8%E3%83%B3%E3%83%89%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88%E4%BD%9C%E6%88%90">(3)-(c) VPC&#x30A8;&#x30F3;&#x30C9;&#x30DD;&#x30A4;&#x30F3;&#x30C8;&#x4F5C;&#x6210;</h3>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-Vpce <span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/vpce.yaml&quot;</span> 
+</pre><h2 class="mume-header" id="3iam%E3%83%AD%E3%83%BC%E3%83%ABkms%E3%82%AD%E3%83%BC%E4%BD%9C%E8%A3%BD">(3)IAM&#x30ED;&#x30FC;&#x30EB;&amp;KMS&#x30AD;&#x30FC;&#x4F5C;&#x88FD;</h2>
+
+<h3 class="mume-header" id="3-a-iam%E3%83%AD%E3%83%BC%E3%83%AB%E4%BD%9C%E6%88%90">(3)-(a) IAM&#x30ED;&#x30FC;&#x30EB;&#x4F5C;&#x6210;</h3>
+
+<p>&#x5FC5;&#x8981;&#x306A;IAM&#x30ED;&#x30FC;&#x30EB;&#x3092;&#x6E96;&#x5099;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+<ul>
+<li>AWS&#x7BA1;&#x7406;&#x30DD;&#x30EA;&#x30B7;&#x30FC;&#x3092;&#x4ED8;&#x4E0E;&#x3059;&#x308B;&#x5834;&#x5408;&#x304A;&#x306F;&#x3053;&#x306E;&#x30BF;&#x30A4;&#x30DF;&#x30F3;&#x30B0;&#x3067;&#x4ED8;&#x4E0E;&#x3057;&#x307E;&#x3059;&#x3002;</li>
+<li>&#x307E;&#x305F;&#x30AB;&#x30B9;&#x30BF;&#x30DE;&#x30FC;&#x7BA1;&#x7406;&#x30DD;&#x30EA;&#x30B7;&#x30FC;&#x307E;&#x305F;&#x306F;&#x30A4;&#x30F3;&#x30E9;&#x30A4;&#x30F3;&#x30DD;&#x30EA;&#x30B7;&#x30FC;&#x3067;&#x30EA;&#x30BD;&#x30FC;&#x30B9;&#x306E;&#x7279;&#x5B9A;&#x304C;&#x4E0D;&#x8981;&#x306A;&#x5834;&#x5408;&#x3082;&#x3053;&#x306E;&#x30BF;&#x30A4;&#x30DF;&#x30F3;&#x30B0;&#x3067;&#x30DD;&#x30EA;&#x30B7;&#x30FC;&#x3092;&#x4ED8;&#x4E0E;&#x3057;&#x307E;&#x3059;&#x3002;</li>
+<li>&#x30EA;&#x30BD;&#x30FC;&#x30B9;&#x306E;&#x7279;&#x5B9A;&#x304C;&#x5FC5;&#x8981;&#x306A;&#x5834;&#x5408;(&#x4F8B;&#x3048;&#x3070;ECR&#x306E;&#x30EA;&#x30DD;&#x30B8;&#x30C8;&#x30EA;&#x306E;ARN&#x304C;&#x5FC5;&#x8981;&#x306A;&#x3069;)&#x306F;&#x3001;&#x30EA;&#x30BD;&#x30FC;&#x30B9;&#x4F5C;&#x6210;&#x6642;&#x306B;&#x500B;&#x5225;&#x306B;&#x30DD;&#x30EA;&#x30B7;&#x30FC;&#x3092;&#x4ED8;&#x4E0E;&#x3057;&#x307E;&#x3059;&#x3002;</li>
+</ul>
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-IAM <span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/iam.yaml&quot;</span> <span class="token punctuation">\</span>
+        --capabilities CAPABILITY_IAM <span class="token punctuation">;</span>
+</pre><h3 class="mume-header" id="3-b-kms-cmk%E3%82%AD%E3%83%BC%E4%BD%9C%E6%88%90">(3)-(b) KMS CMK&#x30AD;&#x30FC;&#x4F5C;&#x6210;</h3>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-KMS <span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/kms.yaml&quot;</span> <span class="token punctuation">;</span>
+</pre><h2 class="mume-header" id="4%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%B3%E3%82%B9%E6%BA%96%E5%82%99">(4)&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x6E96;&#x5099;</h2>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#Bastion &amp; DockerSG &amp; kubectl</span>
+aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-Instances <span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/instances.yaml&quot;</span> 
+</pre><h2 class="mume-header" id="5docker%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E4%BD%9C%E6%88%90%E3%81%A8ecr%E3%81%B8%E3%81%AE%E6%A0%BC%E7%B4%8D">(5)docker&#x30A4;&#x30E1;&#x30FC;&#x30B8;&#x4F5C;&#x6210;&#x3068;ECR&#x3078;&#x306E;&#x683C;&#x7D0D;</h2>
+
+<h3 class="mume-header" id="5-a-ecr%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E4%BD%9C%E6%88%90">(5)-(a) ECR&#x30EA;&#x30DD;&#x30B8;&#x30C8;&#x30EA;&#x4F5C;&#x6210;</h3>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-Ecr <span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/ecr.yaml&quot;</span> <span class="token punctuation">\</span>
+        --capabilities CAPABILITY_IAM <span class="token punctuation">;</span>
+</pre><h3 class="mume-header" id="5-b-docker%E7%92%B0%E5%A2%83%E6%BA%96%E5%82%99">(5)-(b) docker&#x74B0;&#x5883;&#x6E96;&#x5099;</h3>
+
+<h4 class="mume-header" id="i-dockerdev%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%B3%E3%82%B9%E3%81%B8ssm%E3%81%A7os%E3%83%AD%E3%82%B0%E3%82%A4%E3%83%B3">(i) DockerDev&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x3078;SSM&#x3067;OS&#x30ED;&#x30B0;&#x30A4;&#x30F3;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#DockerDev&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x306E;&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;ID&#x53D6;&#x5F97;</span>
+<span class="token assign-left variable">DockerDevID</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --profile $<span class="token punctuation">{</span>PROFILE<span class="token punctuation">}</span> --region $<span class="token punctuation">{</span>REGION<span class="token punctuation">}</span> --output text <span class="token punctuation">\</span>
+    cloudformation describe-stacks <span class="token punctuation">\</span>
+        --stack-name EksPoc-Instances <span class="token punctuation">\</span>
+        --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`DockerDevId`].[OutputValue]&apos;</span><span class="token variable">)</span></span>
+<span class="token builtin class-name">echo</span> <span class="token string">&quot;DockerDevID = <span class="token variable">$DockerDevID</span>&quot;</span>
+
+<span class="token comment">#SSM&#x306B;&#x3088;&#x308B;OS&#x30ED;&#x30B0;&#x30A4;&#x30F3;</span>
+aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    ssm start-session <span class="token punctuation">\</span>
+        --target <span class="token string">&quot;<span class="token variable">${DockerDevID}</span>&quot;</span>
+</pre><h4 class="mume-header" id="ii-docker%E7%92%B0%E5%A2%83%E3%81%AE%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97">(ii) docker&#x74B0;&#x5883;&#x306E;&#x30BB;&#x30C3;&#x30C8;&#x30A2;&#x30C3;&#x30D7;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#ec2-user&#x306B;&#x30B9;&#x30A4;&#x30C3;&#x30C1;</span>
+<span class="token function">sudo</span> -u ec2-user -i
+</pre><pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment"># Setup AWS CLI</span>
+<span class="token assign-left variable">REGION</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span> <span class="token punctuation">\</span>
+    <span class="token assign-left variable">TOKEN</span><span class="token operator">=</span>`curl -s <span class="token punctuation">\</span>
+        -X PUT <span class="token punctuation">\</span>
+        -H <span class="token string">&quot;X-aws-ec2-metadata-token-ttl-seconds: 21600&quot;</span> <span class="token punctuation">\</span>
+        <span class="token string">&quot;http://169.254.169.254/latest/api/token&quot;</span>` <span class="token punctuation">\</span>
+    <span class="token operator">&amp;&amp;</span> <span class="token function">curl</span> <span class="token punctuation">\</span>
+        -H <span class="token string">&quot;X-aws-ec2-metadata-token: <span class="token variable">$TOKEN</span>&quot;</span> -s http://169.254.169.254/latest/meta-data/placement/availability-zone <span class="token operator">|</span> <span class="token function">sed</span> -e <span class="token string">&apos;s/.$//&apos;</span><span class="token variable">)</span></span>
+aws configure <span class="token builtin class-name">set</span> region <span class="token variable">${REGION}</span>
+aws configure <span class="token builtin class-name">set</span> output json
+
+<span class="token comment">#&#x52D5;&#x4F5C;&#x30C6;&#x30B9;&#x30C8;(&#x4F5C;&#x6210;&#x3057;&#x305F;ECR&#x30EC;&#x30DD;&#x30B8;&#x30C8;&#x30EA;&#x304C;&#x30EA;&#x30B9;&#x30C8;&#x306B;&#x8868;&#x793A;&#x3055;&#x308C;&#x308B;&#x3053;&#x3068;&#x3092;&#x78BA;&#x8A8D;)</span>
+aws ecr describe-repositories
+</pre><pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#docker&#x306E;&#x30BB;&#x30C3;&#x30C8;&#x30A2;&#x30C3;&#x30D7;</span>
+<span class="token function">sudo</span> yum <span class="token function">install</span> -y docker
+<span class="token function">sudo</span> systemctl start docker
+<span class="token function">sudo</span> systemctl <span class="token builtin class-name">enable</span> docker
+<span class="token function">sudo</span> <span class="token function">usermod</span> -a -G docker ec2-user
+</pre><pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#usermod&#x8A2D;&#x5B9A;&#x3092;&#x30BB;&#x30C3;&#x30B7;&#x30E7;&#x30F3;&#x306B;&#x53CD;&#x6620;&#x3059;&#x308B;&#x305F;&#x3081;sudo&#x3057;&#x76F4;&#x3059;</span>
+<span class="token builtin class-name">exit</span>
+
+<span class="token comment">#ec2-user&#x306B;&#x30B9;&#x30A4;&#x30C3;&#x30C1;</span>
+<span class="token function">sudo</span> -u ec2-user -i
+
+<span class="token comment">#ec2-user&#x30E6;&#x30FC;&#x30B6;&#x306E;&#x30BB;&#x30AB;&#x30F3;&#x30C9;&#x30B0;&#x30EB;&#x30FC;&#x30D7;&#x306B;docker&#x304C;&#x542B;&#x307E;&#x308C;&#x3066;&#x3044;&#x308B;&#x3053;&#x3068;&#x3092;&#x78BA;&#x8A8D;&#x3059;&#x308B;</span>
+<span class="token function">id</span>
+
+<span class="token comment">#docker&#x30C6;&#x30B9;&#x30C8;(&#x4E0B;&#x8A18;&#x30B3;&#x30DE;&#x30F3;&#x30C9;&#x3067;&#x30B5;&#x30FC;&#x30D0;&#x60C5;&#x5831;&#x304C;&#x53C2;&#x7167;&#x3067;&#x304D;&#x308B;&#x3053;&#x3068;&#x3092;&#x78BA;&#x8A8D;)</span>
+docker info
+</pre><h4 class="mume-header" id="iiidocker%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E4%BD%9C%E6%88%90">(iii)docker&#x30A4;&#x30E1;&#x30FC;&#x30B8;&#x4F5C;&#x6210;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#&#x30B3;&#x30F3;&#x30C6;&#x30CA;&#x30A4;&#x30E1;&#x30FC;&#x30B8;&#x7528;&#x306E;&#x30C7;&#x30A3;&#x30EC;&#x30AF;&#x30C8;&#x30EA;&#x3092;&#x4F5C;&#x6210;&#x3057;&#x79FB;&#x52D5;</span>
+<span class="token function">mkdir</span> httpd-container
+<span class="token builtin class-name">cd</span> httpd-container
+
+<span class="token comment">#&#x30C7;&#x30FC;&#x30BF;&#x7528;&#x30D5;&#x30A9;&#x30EB;&#x30C0;&#x3092;&#x4F5C;&#x6210;</span>
+<span class="token function">mkdir</span> src
+
+<span class="token comment">#docker&#x30B3;&#x30F3;&#x30C6;&#x30CA;&#x306E;&#x5B9A;&#x7FA9;&#x30D5;&#x30A1;&#x30A4;&#x30EB;&#x3092;&#x4F5C;&#x6210;</span>
+<span class="token function">cat</span> <span class="token operator">&gt;</span> Dockerfile <span class="token operator">&lt;&lt;</span> <span class="token string">EOL
+# setting base image
+FROM php:8.1-apache
+
+RUN set -x &amp;&amp; \
+    apt-get update 
+
+COPY src/ /var/www/html/
+EOL</span>
+
+<span class="token comment">#</span>
+<span class="token function">cat</span> <span class="token operator">&gt;</span> src/index.php <span class="token operator">&lt;&lt;</span> <span class="token string">EOL
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;PHP Sample&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;?php echo gethostname(); ?&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+EOL</span>
+
+<span class="token comment">#Docker build</span>
+docker build -t httpd-sample:ver01 <span class="token builtin class-name">.</span>
+docker images
+
+<span class="token comment">#&#x30B3;&#x30F3;&#x30C6;&#x30CA;&#x306E;&#x52D5;&#x4F5C;&#x78BA;&#x8A8D;</span>
+docker run -d -p <span class="token number">8080</span>:80 httpd-sample:ver01
+docker <span class="token function">ps</span> <span class="token comment">#&#x30B3;&#x30F3;&#x30C6;&#x30CA;&#x304C;&#x7A3C;&#x50CD;&#x3057;&#x3066;&#x3044;&#x308B;&#x3053;&#x3068;&#x3092;&#x78BA;&#x8A8D;</span>
+
+<span class="token comment">#&#x63A5;&#x7D9A;&#x78BA;&#x8A8D;</span>
+<span class="token comment"># &lt;title&gt;PHP Sample&lt;/title&gt;&#x3068;&#x3044;&#x3046;&#x6587;&#x5B57;&#x304C;&#x8868;&#x793A;&#x3055;&#x308C;&#x305F;&#x3089;&#x6210;&#x529F;&#xFF01;&#xFF01;</span>
+<span class="token function">curl</span> http://localhost:8080
+</pre><h4 class="mume-header" id="ivdocker%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E4%BD%9C%E6%88%90%E3%81%A8ecr%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E3%81%B8%E3%81%AE%E7%99%BB%E9%8C%B2">(iv)docker&#x30A4;&#x30E1;&#x30FC;&#x30B8;&#x4F5C;&#x6210;&#x3068;ECR&#x30EA;&#x30DD;&#x30B8;&#x30C8;&#x30EA;&#x3078;&#x306E;&#x767B;&#x9332;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token assign-left variable">REPO_URL</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span> aws --output text <span class="token punctuation">\</span>
+    ecr describe-repositories <span class="token punctuation">\</span>
+        --repository-names ekspoc-repo <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;repositories[].repositoryUri&apos;</span> <span class="token variable">)</span></span> <span class="token punctuation">;</span>
+<span class="token builtin class-name">echo</span> <span class="token string">&quot;
+REPO_URL = <span class="token variable">${REPO_URL}</span>
+&quot;</span>
+
+<span class="token comment"># ECR&#x767B;&#x9332;&#x7528;&#x306E;&#x30BF;&#x30B0;&#x3092;&#x4F5C;&#x6210;</span>
+docker tag httpd-sample:ver01 <span class="token variable">${REPO_URL}</span>:latest
+docker images <span class="token comment">#&#x4F5C;&#x6210;&#x3057;&#x305F;tag&#x304C;&#x8868;&#x793A;&#x3055;&#x308C;&#x3066;&#x3044;&#x308B;&#x3053;&#x3068;&#x3092;&#x78BA;&#x8A8D;</span>
+
+<span class="token comment">#ECR&#x30ED;&#x30B0;&#x30A4;&#x30F3;</span>
+<span class="token comment">#&quot;Login Succeeded&quot;&#x3068;&#x8868;&#x793A;&#x3055;&#x308C;&#x308B;&#x3053;&#x3068;&#x3092;&#x78BA;&#x8A8D;</span>
+aws ecr get-login-password <span class="token operator">|</span> docker login --username AWS --password-stdin <span class="token variable">${REPO_URL}</span>
+
+<span class="token comment">#&#x30A4;&#x30E1;&#x30FC;&#x30B8;&#x306E;push</span>
+docker push <span class="token variable">${REPO_URL}</span>:latest
+
+<span class="token comment">#ECR&#x4E0A;&#x306E;&#x30EC;&#x30DD;&#x30B8;&#x30C8;&#x30EA;&#x78BA;&#x8A8D;</span>
+aws ecr list-images --repository-name ekspoc-repo
+</pre><h4 class="mume-header" id="v%E3%83%AD%E3%82%B0%E3%82%A2%E3%82%A6%E3%83%88">(v)&#x30ED;&#x30B0;&#x30A2;&#x30A6;&#x30C8;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token builtin class-name">exit</span>  <span class="token comment">#ec2-user&#x304B;&#x3089;&#x306E;&#x623B;&#x308B;</span>
+<span class="token builtin class-name">exit</span>  <span class="token comment">#SSM&#x304B;&#x3089;&#x306E;&#x30ED;&#x30B0;&#x30A2;&#x30A6;&#x30C8;</span>
+</pre><h2 class="mume-header" id="5eks%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%AB%E3%83%97%E3%83%AC%E3%83%BC%E3%83%B3%E3%83%8E%E3%83%BC%E3%83%89%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97%E4%BD%9C%E6%88%90">(5)EKS&#x30B3;&#x30F3;&#x30C8;&#x30ED;&#x30FC;&#x30EB;&#x30D7;&#x30EC;&#x30FC;&#x30F3;&amp;&#x30CE;&#x30FC;&#x30C9;&#x30B0;&#x30EB;&#x30FC;&#x30D7;&#x4F5C;&#x6210;</h2>
+
+<p>&#x4EE5;&#x4E0B;&#x306E;&#x4F5C;&#x696D;&#x306F;&#x3001;Bastion&#x517C;&#x9AD8;&#x6A29;&#x9650;&#x7528;&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x3067;&#x4F5C;&#x696D;&#x3057;&#x307E;&#x3059;&#x3002;<br>
+&#x3053;&#x308C;&#x306F;&#x4F5C;&#x6210;&#x3057;&#x305F;EKS&#x30AF;&#x30E9;&#x30B9;&#x30BF;&#x30FC;&#x306E;&#x521D;&#x671F;&#x72B6;&#x614B;&#x3067;kubectl&#x3067;&#x64CD;&#x4F5C;&#x53EF;&#x80FD;&#x306A;IAM&#x306F;&#x3001;EKS&#x30AF;&#x30E9;&#x30B9;&#x30BF;&#x30FC;&#x3092;&#x4F5C;&#x6210;&#x3057;&#x305F;&#x6A29;&#x9650;&#x306E;&#x307F;&#x306E;&#x305F;&#x3081;&#x3067;&#x3042;&#x308B;&#x3002;</p>
+<h3 class="mume-header" id="5-a-%E9%AB%98%E6%A8%A9%E9%99%90bastion%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%B3%E3%82%B9%E7%92%B0%E5%A2%83%E6%BA%96%E5%82%99">(5)-(a) &#x9AD8;&#x6A29;&#x9650;(Bastion)&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x74B0;&#x5883;&#x6E96;&#x5099;</h3>
+
+<h4 class="mume-header" id="i-%E9%AB%98%E6%A8%A9%E9%99%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%B3%E3%82%B9%E3%81%B8ssm%E3%81%A7os%E3%83%AD%E3%82%B0%E3%82%A4%E3%83%B3">(i) &#x9AD8;&#x6A29;&#x9650;&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x3078;SSM&#x3067;OS&#x30ED;&#x30B0;&#x30A4;&#x30F3;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#DockerDev&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x306E;&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;ID&#x53D6;&#x5F97;</span>
+<span class="token assign-left variable">HighAuthID</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --profile $<span class="token punctuation">{</span>PROFILE<span class="token punctuation">}</span> --region $<span class="token punctuation">{</span>REGION<span class="token punctuation">}</span> --output text <span class="token punctuation">\</span>
+    cloudformation describe-stacks <span class="token punctuation">\</span>
+        --stack-name EksPoc-Instances <span class="token punctuation">\</span>
+        --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`BastionAndHighAuthorityId`].[OutputValue]&apos;</span><span class="token variable">)</span></span>
+<span class="token builtin class-name">echo</span> <span class="token string">&quot;HighAuthID = <span class="token variable">$HighAuthID</span>&quot;</span>
+
+<span class="token comment">#SSM&#x306B;&#x3088;&#x308B;OS&#x30ED;&#x30B0;&#x30A4;&#x30F3;</span>
+aws --profile <span class="token variable">${PROFILE}</span> --region <span class="token variable">${REGION}</span> <span class="token punctuation">\</span>
+    ssm start-session <span class="token punctuation">\</span>
+        --target <span class="token string">&quot;<span class="token variable">${HighAuthID}</span>&quot;</span>
+</pre><h4 class="mume-header" id="ii-aws-cli%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97">(ii) AWS CLI&#x30BB;&#x30C3;&#x30C8;&#x30A2;&#x30C3;&#x30D7;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#ec2-user&#x306B;&#x30B9;&#x30A4;&#x30C3;&#x30C1;</span>
+<span class="token function">sudo</span> -u ec2-user -i
+</pre><pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment"># Setup AWS CLI</span>
+<span class="token assign-left variable">REGION</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span> <span class="token punctuation">\</span>
+    <span class="token assign-left variable">TOKEN</span><span class="token operator">=</span>`curl -s <span class="token punctuation">\</span>
+        -X PUT <span class="token punctuation">\</span>
+        -H <span class="token string">&quot;X-aws-ec2-metadata-token-ttl-seconds: 21600&quot;</span> <span class="token punctuation">\</span>
+        <span class="token string">&quot;http://169.254.169.254/latest/api/token&quot;</span>` <span class="token punctuation">\</span>
+    <span class="token operator">&amp;&amp;</span> <span class="token function">curl</span> <span class="token punctuation">\</span>
+        -H <span class="token string">&quot;X-aws-ec2-metadata-token: <span class="token variable">$TOKEN</span>&quot;</span> -s http://169.254.169.254/latest/meta-data/placement/availability-zone <span class="token operator">|</span> <span class="token function">sed</span> -e <span class="token string">&apos;s/.$//&apos;</span><span class="token variable">)</span></span>
+aws configure <span class="token builtin class-name">set</span> region <span class="token variable">${REGION}</span>
+aws configure <span class="token builtin class-name">set</span> output json
+</pre><h4 class="mume-header" id="iii%E9%AB%98%E6%A8%A9%E9%99%90%E7%92%B0%E5%A2%83%E3%81%B8%E3%81%AEkubectl%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97">(iii)&#x9AD8;&#x6A29;&#x9650;&#x74B0;&#x5883;&#x3078;&#x306E;kubectl&#x30BB;&#x30C3;&#x30C8;&#x30A2;&#x30C3;&#x30D7;</h4>
+
+<p>EksAdmin&#x74B0;&#x5883;&#x3067;kubectl&#x64CD;&#x4F5C;&#x3092;&#x53EF;&#x80FD;&#x306B;&#x3059;&#x308B;&#x305F;&#x3081;&#x306B;&#x306F;&#x3001;&#x307E;&#x305A;HightAuth&#x74B0;&#x5883;&#x3067;kubeconfig&#x306E;&#x521D;&#x671F;&#x8A2D;&#x5B9A;&#x306E;&#x521D;&#x671F;&#x8A2D;&#x5B9A;&#x3092;&#x884C;&#x3046;&#x5FC5;&#x8981;&#x304C;&#x3042;&#x308B;&#x3002;&#x305D;&#x306E;&#x305F;&#x3081;&#x306B;&#x307E;&#x305A;HighAuth&#x74B0;&#x5883;&#x3067;kubectl&#x3092;&#x30BB;&#x30C3;&#x30C8;&#x30A2;&#x30C3;&#x30D7;&#x3059;&#x308B;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment"># kubectl&#x306E;&#x30C0;&#x30A6;&#x30F3;&#x30ED;&#x30FC;&#x30C9;</span>
+<span class="token function">curl</span> -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
+
+<span class="token function">curl</span> -o kubectl.sha256 https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl.sha256
+
+<span class="token comment">#&#x30C1;&#x30A7;&#x30C3;&#x30AF;&#x30B5;&#x30E0;&#x78BA;&#x8A8D;</span>
+<span class="token keyword keyword-if">if</span> <span class="token punctuation">[</span> <span class="token variable"><span class="token variable">$(</span>openssl sha1 -sha256 kubectl<span class="token operator">|</span><span class="token function">awk</span> <span class="token string">&apos;{print $2}&apos;</span><span class="token variable">)</span></span> <span class="token operator">=</span> <span class="token variable"><span class="token variable">$(</span><span class="token function">cat</span> kubectl.sha256 <span class="token operator">|</span> <span class="token function">awk</span> <span class="token string">&apos;{print $1}&apos;</span><span class="token variable">)</span></span> <span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token keyword keyword-then">then</span> <span class="token builtin class-name">echo</span> OK<span class="token punctuation">;</span> <span class="token keyword keyword-else">else</span> <span class="token builtin class-name">echo</span> NG<span class="token punctuation">;</span> <span class="token keyword keyword-fi">fi</span>
+</pre><pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#kubectl&#x306E;&#x30D1;&#x30FC;&#x30DF;&#x30C3;&#x30B7;&#x30E7;&#x30F3;&#x4ED8;&#x4E0E;&#x3068;&#x79FB;&#x52D5;</span>
+<span class="token function">chmod</span> +x ./kubectl
+<span class="token function">mkdir</span> -p <span class="token environment constant">$HOME</span>/bin <span class="token operator">&amp;&amp;</span> <span class="token function">mv</span> ./kubectl <span class="token environment constant">$HOME</span>/bin/kubectl <span class="token operator">&amp;&amp;</span> <span class="token builtin class-name">export</span> <span class="token assign-left variable"><span class="token environment constant">PATH</span></span><span class="token operator">=</span><span class="token environment constant">$HOME</span>/bin:<span class="token environment constant">$PATH</span>
+<span class="token builtin class-name">echo</span> <span class="token string">&apos;export PATH=$HOME/bin:$PATH&apos;</span> <span class="token operator">&gt;&gt;</span> ~/.bashrc
+
+<span class="token comment">#&#x52D5;&#x4F5C;&#x30C6;&#x30B9;&#x30C8;</span>
+kubectl version --short --client
+</pre><h4 class="mume-header" id="iv-%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E3%81%AEclone">(iv) &#x30BD;&#x30FC;&#x30B9;&#x30B3;&#x30FC;&#x30C9;&#x306E;clone</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token function">sudo</span> yum -y <span class="token function">install</span> <span class="token function">git</span>
+<span class="token function">git</span> clone https://github.com/Noppy/EKSPoC_For_SecureEnvironment.git
+<span class="token builtin class-name">cd</span> EKSPoC_For_SecureEnvironment
+</pre><h3 class="mume-header" id="5-b-eks%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%BC%E4%BD%9C%E6%88%90k8s%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%AB%E3%83%97%E3%83%AC%E3%83%BC%E3%83%B3%E4%BD%9C%E6%88%90">(5)-(b) EKS&#x30AF;&#x30E9;&#x30B9;&#x30BF;&#x30FC;&#x4F5C;&#x6210;(k8s&#x30B3;&#x30F3;&#x30C8;&#x30ED;&#x30FC;&#x30EB;&#x30D7;&#x30EC;&#x30FC;&#x30F3;&#x4F5C;&#x6210;)</h3>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-EksControlPlane <span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/eks_control_plane.yaml&quot;</span> 
+</pre><h3 class="mume-header" id="5-c-eks%E3%83%AF%E3%83%BC%E3%82%AB%E3%83%BC%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97%E4%BD%9C%E6%88%90">(5)-(c) EKS&#x30EF;&#x30FC;&#x30AB;&#x30FC;&#x30B0;&#x30EB;&#x30FC;&#x30D7;&#x4F5C;&#x6210;</h3>
+
+<h4 class="mume-header" id="i%E6%83%85%E5%A0%B1%E5%8F%96%E5%BE%97">(i)&#x60C5;&#x5831;&#x53D6;&#x5F97;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#Worker&#x3078;&#x306E;SSH&#x63A5;&#x7D9A;&#x8A2D;&#x5B9A;</span>
+<span class="token assign-left variable">KEY_NAME</span><span class="token operator">=</span><span class="token string">&quot;CHANGE_KEY_PAIR_NAME&quot;</span> <span class="token comment">#SSH&#x63A5;&#x7D9A;&#x3059;&#x308B;&#x5834;&#x5408;</span>
+<span class="token comment">#KEY_NAME=&quot;&quot;                    #SSH&#x63A5;&#x7D9A;&#x3057;&#x306A;&#x3044;&#x5834;&#x5408;&#x306F;&#x30D6;&#x30E9;&#x30F3;&#x30AF;&#x3092;&#x8A2D;&#x5B9A;&#x3059;&#x308B; </span>
+
+<span class="token assign-left variable">EKS_CLUSTER_NAME</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --output text cloudformation <span class="token punctuation">\</span>
+    describe-stacks --stack-name EksPoc-EksControlPlane <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]&apos;</span> <span class="token variable">)</span></span>
+<span class="token assign-left variable">EKS_B64_CLUSTER_CA</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --output text cloudformation <span class="token punctuation">\</span>
+    describe-stacks --stack-name EksPoc-EksControlPlane <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`CertificateAuthorityData`].[OutputValue]&apos;</span> <span class="token variable">)</span></span>
+<span class="token assign-left variable">EKS_API_SERVER_URL</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --output text cloudformation <span class="token punctuation">\</span>
+    describe-stacks --stack-name EksPoc-EksControlPlane <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`ControlPlaneEndpoint`].[OutputValue]&apos;</span> <span class="token variable">)</span></span>
+<span class="token builtin class-name">echo</span> <span class="token string">&quot;
+KEY_NAME           = <span class="token variable">${KEY_NAME}</span>
+EKS_CLUSTER_NAME   = <span class="token variable">${EKS_CLUSTER_NAME}</span>
+EKS_B64_CLUSTER_CA = <span class="token variable">${EKS_B64_CLUSTER_CA}</span>
+EKS_API_SERVER_URL = <span class="token variable">${EKS_API_SERVER_URL}</span>
+&quot;</span>
+
+</pre><h4 class="mume-header" id="iieks%E3%83%8E%E3%83%BC%E3%83%89%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97%E4%BD%9C%E6%88%90">(ii)EKS&#x30CE;&#x30FC;&#x30C9;&#x30B0;&#x30EB;&#x30FC;&#x30D7;&#x4F5C;&#x6210;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token assign-left variable">CFN_STACK_PARAMETERS</span><span class="token operator">=</span><span class="token string">&apos;
+[
+  {
+    &quot;ParameterKey&quot;: &quot;ClusterName&quot;,
+    &quot;ParameterValue&quot;: &quot;&apos;</span>&quot;<span class="token variable">${EKS_CLUSTER_NAME}</span><span class="token string">&quot;&apos;&quot;</span>
+  <span class="token punctuation">}</span>,
+  <span class="token punctuation">{</span>
+    <span class="token string">&quot;ParameterKey&quot;</span><span class="token builtin class-name">:</span> <span class="token string">&quot;B64ClusterCa&quot;</span>,
+    <span class="token string">&quot;ParameterValue&quot;</span><span class="token builtin class-name">:</span> <span class="token string">&quot;&apos;&quot;</span><span class="token variable">${EKS_B64_CLUSTER_CA}</span><span class="token string">&quot;&apos;&quot;</span>
+  <span class="token punctuation">}</span>,
+  <span class="token punctuation">{</span>
+    <span class="token string">&quot;ParameterKey&quot;</span><span class="token builtin class-name">:</span> <span class="token string">&quot;ApiServerUrl&quot;</span>,
+    <span class="token string">&quot;ParameterValue&quot;</span><span class="token builtin class-name">:</span> <span class="token string">&quot;&apos;&quot;</span><span class="token variable">${EKS_API_SERVER_URL}</span><span class="token string">&quot;&apos;&quot;</span>
+  <span class="token punctuation">}</span>,  
+  <span class="token punctuation">{</span>
+    <span class="token string">&quot;ParameterKey&quot;</span><span class="token builtin class-name">:</span> <span class="token string">&quot;KeyName&quot;</span>,
+    <span class="token string">&quot;ParameterValue&quot;</span><span class="token builtin class-name">:</span> <span class="token string">&quot;&apos;&quot;</span><span class="token variable">${KEY_NAME}</span><span class="token string">&quot;&apos;&quot;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">]</span>&apos;
+aws cloudformation create-stack <span class="token punctuation">\</span>
+        --stack-name EksPoc-EksNodeGroup<span class="token punctuation">\</span>
+        --template-body <span class="token string">&quot;file://./src/eks_worker_nodegrp.yaml&quot;</span> <span class="token punctuation">\</span>
+        --parameters <span class="token string">&quot;<span class="token variable">${CFN_STACK_PARAMETERS}</span>&quot;</span> <span class="token punctuation">;</span>
+
+</pre><h4 class="mume-header" id="iii%E9%AB%98%E6%A8%A9%E9%99%90%E7%92%B0%E5%A2%83%E3%81%AEkubectl%E3%82%92%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%AB%E3%83%97%E3%83%AC%E3%83%BC%E3%83%B3%E3%81%AB%E6%8E%A5%E7%B6%9A">(iii)&#x9AD8;&#x6A29;&#x9650;&#x74B0;&#x5883;&#x306E;kubectl&#x3092;&#x30B3;&#x30F3;&#x30C8;&#x30ED;&#x30FC;&#x30EB;&#x30D7;&#x30EC;&#x30FC;&#x30F3;&#x306B;&#x63A5;&#x7D9A;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment"># kubectl&#x7528;&#x306E;config&#x53D6;&#x5F97;</span>
+aws eks update-kubeconfig --name <span class="token variable">${EKS_CLUSTER_NAME}</span>
+
+<span class="token comment">#kubectl&#x30B3;&#x30DE;&#x30F3;&#x30C9;&#x304B;&#x3089;&#x306E;k8s&#x30DE;&#x30B9;&#x30BF;&#x30FC;&#x30CE;&#x30FC;&#x30C9;&#x63A5;&#x7D9A;&#x78BA;&#x8A8D;</span>
+kubectl get svc
+</pre><h4 class="mume-header" id="ivaws-auth-configmap%E3%81%AE%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%BC%E3%81%B8%E3%81%AE%E9%81%A9%E7%94%A8">(iv)aws-auth ConfigMap&#x306E;&#x30AF;&#x30E9;&#x30B9;&#x30BF;&#x30FC;&#x3078;&#x306E;&#x9069;&#x7528;</h4>
+
+<ul>
+<li><a href="https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-user-role.html#aws-auth-configmapg">aws-auth&#x8A2D;&#x5B9A;&#x306E;&#x6700;&#x65B0;&#x60C5;&#x5831;&#x306F;&#x3053;&#x3061;&#x3089;&#x3092;&#x53C2;&#x7167;</a></li>
+</ul>
+<p>aws-auth ConfigMap &#x304C;&#x9069;&#x7528;&#x6E08;&#x307F;&#x3067;&#x3042;&#x308B;&#x304B;&#x3069;&#x3046;&#x304B;&#x3092;&#x78BA;&#x8A8D;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell">kubectl describe configmap -n kube-system aws-auth
+</pre><p><code>Error from server (NotFound): configmaps &quot;aws-auth&quot; not found</code>&#x3068;&#x3044;&#x3046;&#x30A8;&#x30E9;&#x30FC;&#x304C;&#x8868;&#x793A;&#x3055;&#x308C;&#x305F;&#x5834;&#x5408;&#x306F;&#x3001;&#x4EE5;&#x4E0B;&#x306E;&#x30B9;&#x30C6;&#x30C3;&#x30D7;&#x3092;&#x5B9F;&#x884C;&#x3057;&#x3066;&#x30B9;&#x30C8;&#x30C3;&#x30AF; ConfigMap &#x3092;&#x9069;&#x7528;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token function">curl</span> -o aws-auth-cm.yaml https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2020-10-29/aws-auth-cm.yaml
+</pre><p>CloudFormation&#x304B;&#x3089;WorkerNode&#x306E;&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x30ED;&#x30FC;&#x30EB;ARN&#x3092;&#x53D6;&#x5F97;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws --output text cloudformation describe-stacks <span class="token punctuation">\</span>
+    --stack-name EksPoc-IAM <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`EC2k8sWorkerRoleArn`].[OutputValue]&apos;</span>
+</pre><p>aws-auth-cm.yaml&#x7DE8;&#x96C6;<br>
+<code>&lt;ARN of instance role (not instance profile)&gt;</code>&#x3092;WorkerNode&#x306E;&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x30ED;&#x30FC;&#x30EB;ARN&#x306B;&#x4FEE;&#x6B63;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token function">vi</span> aws-auth-cm.yaml
+
+&#x4E2D;&#x7565;
+data:
+  mapRoles: <span class="token operator">|</span>
+    - rolearn: <span class="token operator">&lt;</span>ARN of instance role <span class="token punctuation">(</span>not instance profile<span class="token punctuation">)</span><span class="token operator">&gt;</span>
+&#x4EE5;&#x4E0B;&#x7565;
+</pre><p>aws-auth&#x3092;&#x9069;&#x7528;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment"># aws-auth-cm.yaml&#x306E;&#x9069;&#x7528;</span>
+kubectl apply -f aws-auth-cm.yaml
+
+<span class="token comment"># WorkerNode&#x72B6;&#x614B;&#x78BA;&#x8A8D;</span>
+kubectl get nodes --watch
+</pre><pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token assign-left variable">EKS_CLUSTER_NAME</span><span class="token operator">=</span>EksPoC-Cluster
+<span class="token assign-left variable">EKS_VERSION</span><span class="token operator">=</span><span class="token number">1.22</span>
+
+<span class="token comment">#CloudFormation&#x304B;&#x3089;&#x306E;&#x60C5;&#x5831;&#x53CE;&#x96C6;</span>
+<span class="token assign-left variable">EKS_SERVICE_ROLE</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --output text cloudformation <span class="token punctuation">\</span>
+    describe-stacks --stack-name EksPoc-IAM <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`EksServiceRoleArn`].[OutputValue]&apos;</span> <span class="token variable">)</span></span>
+<span class="token assign-left variable">EKS_KMS_KEY_ARN</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --output text cloudformation <span class="token punctuation">\</span>
+    describe-stacks --stack-name EksPoc-KMS <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`KeyArn`].[OutputValue]&apos;</span> <span class="token variable">)</span></span>
+<span class="token assign-left variable">EKS_CLUSTER_SUBNET1</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --output text cloudformation <span class="token punctuation">\</span>
+    describe-stacks --stack-name EksPoc-VPC <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`PrivateSubnet1Id`].[OutputValue]&apos;</span> <span class="token variable">)</span></span>
+<span class="token assign-left variable">EKS_CLUSTER_SUBNET2</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --output text cloudformation <span class="token punctuation">\</span>
+    describe-stacks --stack-name EksPoc-VPC <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`PrivateSubnet2Id`].[OutputValue]&apos;</span> <span class="token variable">)</span></span>
+    
+<span class="token assign-left variable">EKS_CLUSTER_SG</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>aws --output text cloudformation <span class="token punctuation">\</span>
+    describe-stacks --stack-name EksPoc-SG <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`EksCtlPlaneSGId`].[OutputValue]&apos;</span> <span class="token variable">)</span></span>
+
+<span class="token comment">#Check Parameter</span>
+<span class="token builtin class-name">echo</span> -e <span class="token string">&quot;
+EKS_SERVICE_ROLE    = <span class="token variable">${EKS_SERVICE_ROLE}</span>
+EKS_KMS_KEY_ARN     = <span class="token variable">${EKS_KMS_KEY_ARN}</span>
+EKS_CLUSTER_SUBNET1 = <span class="token variable">${EKS_CLUSTER_SUBNET1}</span>
+EKS_CLUSTER_SUBNET2 = <span class="token variable">${EKS_CLUSTER_SUBNET2}</span>
+EKS_CLUSTER_SG      = <span class="token variable">${EKS_CLUSTER_SG}</span>&quot;</span>
+
+</pre><h4 class="mume-header" id="ii-eks%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%BC%E4%BD%9C%E6%88%90">(ii) EKS&#x30AF;&#x30E9;&#x30B9;&#x30BF;&#x30FC;&#x4F5C;&#x6210;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#&#x30AF;&#x30E9;&#x30B9;&#x30BF;&#x30FC;&#x4F5C;&#x6210;</span>
+aws eks create-cluster <span class="token punctuation">\</span>
+    --name <span class="token variable">${EKS_CLUSTER_NAME}</span> <span class="token punctuation">\</span>
+    --kubernetes-version <span class="token variable">${EKS_VERSION}</span> <span class="token punctuation">\</span>
+    --role-arn <span class="token variable">${EKS_SERVICE_ROLE}</span> <span class="token punctuation">\</span>
+    --logging <span class="token string">&apos;
+        {&quot;clusterLogging&quot;: [
+            { &quot;types&quot;: [&quot;api&quot;,&quot;audit&quot;,&quot;authenticator&quot;,&quot;controllerManager&quot;,&quot;scheduler&quot;],
+              &quot;enabled&quot;: true 
+            }
+        ]}&apos;</span> <span class="token punctuation">\</span>
+    --encryption-config <span class="token string">&apos;
+        [
+            {
+                &quot;resources&quot;:[&quot;secrets&quot;],
+                &quot;provider&quot;:{
+                    &quot;keyArn&quot;:&quot;&apos;</span>&quot;<span class="token variable">${EKS_KMS_KEY_ARN}</span><span class="token string">&quot;&apos;&quot;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">]</span>&apos; <span class="token punctuation">\</span>
+    --resources-vpc-config <span class="token punctuation">\</span>
+        <span class="token assign-left variable">subnetIds</span><span class="token operator">=</span><span class="token variable">${EKS_CLUSTER_SUBNET1}</span>,<span class="token variable">${EKS_CLUSTER_SUBNET2}</span>,securityGroupIds<span class="token operator">=</span><span class="token variable">${EKS_CLUSTER_SG}</span>,endpointPublicAccess<span class="token operator">=</span>false,endpointPrivateAccess<span class="token operator">=</span>true <span class="token punctuation">;</span>
+
+</pre><h3 class="mume-header" id="5-c-eksadmin%E7%92%B0%E5%A2%83%E3%81%AE%E6%BA%96%E5%82%99">(5)-(c) EksAdmin&#x74B0;&#x5883;&#x306E;&#x6E96;&#x5099;</h3>
+
+<h4 class="mume-header" id="i%E9%AB%98%E6%A8%A9%E9%99%90%E7%92%B0%E5%A2%83%E3%81%B8%E3%81%AEkubectl%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97">(i)&#x9AD8;&#x6A29;&#x9650;&#x74B0;&#x5883;&#x3078;&#x306E;kubectl&#x30BB;&#x30C3;&#x30C8;&#x30A2;&#x30C3;&#x30D7;</h4>
+
+<p>EksAdmin&#x74B0;&#x5883;&#x3067;kubectl&#x64CD;&#x4F5C;&#x3092;&#x53EF;&#x80FD;&#x306B;&#x3059;&#x308B;&#x305F;&#x3081;&#x306B;&#x306F;&#x3001;&#x307E;&#x305A;HightAuth&#x74B0;&#x5883;&#x3067;kubeconfig&#x306E;&#x521D;&#x671F;&#x8A2D;&#x5B9A;&#x306E;&#x521D;&#x671F;&#x8A2D;&#x5B9A;&#x3092;&#x884C;&#x3046;&#x5FC5;&#x8981;&#x304C;&#x3042;&#x308B;&#x3002;&#x305D;&#x306E;&#x305F;&#x3081;&#x306B;&#x307E;&#x305A;HighAuth&#x74B0;&#x5883;&#x3067;kubectl&#x3092;&#x30BB;&#x30C3;&#x30C8;&#x30A2;&#x30C3;&#x30D7;&#x3059;&#x308B;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment"># kubectl&#x306E;&#x30C0;&#x30A6;&#x30F3;&#x30ED;&#x30FC;&#x30C9;</span>
+<span class="token function">curl</span> -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
+
+<span class="token function">curl</span> -o kubectl.sha256 https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl.sha256
+
+<span class="token comment">#&#x30C1;&#x30A7;&#x30C3;&#x30AF;&#x30B5;&#x30E0;&#x78BA;&#x8A8D;</span>
+<span class="token keyword keyword-if">if</span> <span class="token punctuation">[</span> <span class="token variable"><span class="token variable">$(</span>openssl sha1 -sha256 kubectl<span class="token operator">|</span><span class="token function">awk</span> <span class="token string">&apos;{print $2}&apos;</span><span class="token variable">)</span></span> <span class="token operator">=</span> <span class="token variable"><span class="token variable">$(</span><span class="token function">cat</span> kubectl.sha256 <span class="token operator">|</span> <span class="token function">awk</span> <span class="token string">&apos;{print $1}&apos;</span><span class="token variable">)</span></span> <span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token keyword keyword-then">then</span> <span class="token builtin class-name">echo</span> OK<span class="token punctuation">;</span> <span class="token keyword keyword-else">else</span> <span class="token builtin class-name">echo</span> NG<span class="token punctuation">;</span> <span class="token keyword keyword-fi">fi</span>
+</pre><pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#kubectl&#x306E;&#x30D1;&#x30FC;&#x30DF;&#x30C3;&#x30B7;&#x30E7;&#x30F3;&#x4ED8;&#x4E0E;&#x3068;&#x79FB;&#x52D5;</span>
+<span class="token function">chmod</span> +x ./kubectl
+<span class="token function">mkdir</span> -p <span class="token environment constant">$HOME</span>/bin <span class="token operator">&amp;&amp;</span> <span class="token function">mv</span> ./kubectl <span class="token environment constant">$HOME</span>/bin/kubectl <span class="token operator">&amp;&amp;</span> <span class="token builtin class-name">export</span> <span class="token assign-left variable"><span class="token environment constant">PATH</span></span><span class="token operator">=</span><span class="token environment constant">$HOME</span>/bin:<span class="token environment constant">$PATH</span>
+<span class="token builtin class-name">echo</span> <span class="token string">&apos;export PATH=$HOME/bin:$PATH&apos;</span> <span class="token operator">&gt;&gt;</span> ~/.bashrc
+
+<span class="token comment">#&#x52D5;&#x4F5C;&#x30C6;&#x30B9;&#x30C8;</span>
+kubectl version --short --client
+</pre><h4 class="mume-header" id="ii%E9%AB%98%E6%A8%A9%E9%99%90%E7%92%B0%E5%A2%83%E3%81%AEkubectl%E3%82%92%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%AB%E3%83%97%E3%83%AC%E3%83%BC%E3%83%B3%E3%81%AB%E6%8E%A5%E7%B6%9A">(ii)&#x9AD8;&#x6A29;&#x9650;&#x74B0;&#x5883;&#x306E;kubectl&#x3092;&#x30B3;&#x30F3;&#x30C8;&#x30ED;&#x30FC;&#x30EB;&#x30D7;&#x30EC;&#x30FC;&#x30F3;&#x306B;&#x63A5;&#x7D9A;</h4>
+
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment"># kubectl&#x7528;&#x306E;config&#x53D6;&#x5F97;</span>
+aws eks update-kubeconfig --name <span class="token variable">${EKS_CLUSTER_NAME}</span>
+
+<span class="token comment">#kubectl&#x30B3;&#x30DE;&#x30F3;&#x30C9;&#x304B;&#x3089;&#x306E;k8s&#x30DE;&#x30B9;&#x30BF;&#x30FC;&#x30CE;&#x30FC;&#x30C9;&#x63A5;&#x7D9A;&#x78BA;&#x8A8D;</span>
+kubectl get svc
+</pre><h4 class="mume-header" id="iiiaws-auth-configmap%E3%81%AE%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%BC%E3%81%B8%E3%81%AE%E9%81%A9%E7%94%A8">(iii)aws-auth ConfigMap&#x306E;&#x30AF;&#x30E9;&#x30B9;&#x30BF;&#x30FC;&#x3078;&#x306E;&#x9069;&#x7528;</h4>
+
+<ul>
+<li><a href="https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-user-role.html#aws-auth-configmapg">aws-auth&#x8A2D;&#x5B9A;&#x306E;&#x6700;&#x65B0;&#x60C5;&#x5831;&#x306F;&#x3053;&#x3061;&#x3089;&#x3092;&#x53C2;&#x7167;</a></li>
+</ul>
+<p>aws-auth ConfigMap &#x304C;&#x9069;&#x7528;&#x6E08;&#x307F;&#x3067;&#x3042;&#x308B;&#x304B;&#x3069;&#x3046;&#x304B;&#x3092;&#x78BA;&#x8A8D;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell">kubectl describe configmap -n kube-system aws-auth<span class="token punctuation">]</span>
+</pre><p><code>Error from server (NotFound): configmaps &quot;aws-auth&quot; not found</code>&#x3068;&#x3044;&#x3046;&#x30A8;&#x30E9;&#x30FC;&#x304C;&#x8868;&#x793A;&#x3055;&#x308C;&#x305F;&#x5834;&#x5408;&#x306F;&#x3001;&#x4EE5;&#x4E0B;&#x306E;&#x30B9;&#x30C6;&#x30C3;&#x30D7;&#x3092;&#x5B9F;&#x884C;&#x3057;&#x3066;&#x30B9;&#x30C8;&#x30C3;&#x30AF; ConfigMap &#x3092;&#x9069;&#x7528;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token function">curl</span> -o aws-auth-cm.yaml https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2020-10-29/aws-auth-cm.yaml
+</pre><p>CloudFormation&#x304B;&#x3089;WorkerNode&#x306E;&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x30ED;&#x30FC;&#x30EB;ARN&#x3092;&#x53D6;&#x5F97;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell">aws --output text cloudformation describe-stacks <span class="token punctuation">\</span>
+    --stack-name EksPoc-IAM <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`EC2k8sWorkerRoleArn`].[OutputValue]&apos;</span>
+</pre><p>aws-auth-cm.yaml&#x7DE8;&#x96C6;<br>
+<code>&lt;ARN of instance role (not instance profile)&gt;</code>&#x3092;WorkerNode&#x306E;&#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x30ED;&#x30FC;&#x30EB;ARN&#x306B;&#x4FEE;&#x6B63;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token function">vi</span> aws-auth-cm.yaml
+
+&#x4E2D;&#x7565;
+data:
+  mapRoles: <span class="token operator">|</span>
+    - rolearn: <span class="token operator">&lt;</span>ARN of instance role <span class="token punctuation">(</span>not instance profile<span class="token punctuation">)</span><span class="token operator">&gt;</span>
+&#x4EE5;&#x4E0B;&#x7565;
+</pre><p>aws-auth&#x3092;&#x9069;&#x7528;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment"># aws-auth-cm.yaml&#x306E;&#x9069;&#x7528;</span>
+kubectl apply -f aws-auth-cm.yaml
+
+<span class="token comment"># WorkerNode&#x72B6;&#x614B;&#x78BA;&#x8A8D;</span>
+kubectl get nodes --watch
+</pre><p>EksAdmin&#x306E;&#x30ED;&#x30FC;&#x30EB;&#x3092;k8s&#x306E;&#x30DE;&#x30C3;&#x30D7;&#x306B;&#x8FFD;&#x52A0;</p>
+<pre data-role="codeBlock" data-info="shell" class="language-shell"><span class="token comment">#k8s&#x7BA1;&#x7406;&#x8005;&#x7528;&#x306E;IAM&#x30ED;&#x30FC;&#x30EB;&#x306E;ARN&#x53D6;&#x5F97;</span>
+aws --output text cloudformation describe-stacks <span class="token punctuation">\</span>
+    --stack-name EksPoc-IAM <span class="token punctuation">\</span>
+    --query <span class="token string">&apos;Stacks[].Outputs[?OutputKey==`EC2kubectlRoleArn`].[OutputValue]&apos;</span>
+
+<span class="token comment">#aws-auth ConfigMap&#x3092;&#x958B;&#x304F;</span>
+kubectl edit -n kube-system configmap/aws-auth
+</pre>
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+    
+    
+  
+    </body></html>

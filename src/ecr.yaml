@@ -73,6 +73,13 @@ Resources:
               - "ecr:*"
             Resource:
               - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+              #EKS用の公式コンテナイメージ取得用
+              #https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-ons-images.html
+              - !Sub "arn:${AWS::Partition}:ecr:*:877085696533:repository/*"
+              - !Sub "arn:${AWS::Partition}:ecr:*:800184023465:repository/*"
+              - !Sub "arn:${AWS::Partition}:ecr:*:602401143452:repository/*"
+              - !Sub "arn:${AWS::Partition}:ecr:*:590381155156:repository/*"
+              - !Sub "arn:${AWS::Partition}:ecr:*:558608220178:repository/*"
   #--
   EcrApiEndpoint:
     Type: AWS::EC2::VPCEndpoint

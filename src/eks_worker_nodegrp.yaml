@@ -1,0 +1,103 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "EKS Managed Nodes (SSH access: false) [created by eksctl]"
+#----------------------------------------------
+Parameters:
+  NodeGroupName:
+    Type: String
+    Default: NodeGroup
+  ClusterName:
+    Type: String
+  B64ClusterCa:
+    Type: String
+  ApiServerUrl:
+    Type: String
+  KeyName:
+    Type: String
+    Default: ""
+#----------------------------------------------
+Conditions: 
+  CheckKeyPair: !Not [!Equals [!Ref KeyName, "" ]]
+#----------------------------------------------
+Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            Iops: "3000"
+            Throughput: "125"
+            VolumeSize: "80"
+            VolumeType: "gp3"
+        MetadataOptions:
+          HttpPutResponseHopLimit: "2"
+          HttpTokens: "optional"
+        KeyName:
+          Fn::If:
+            - CheckKeyPair
+            - !Ref KeyName
+            - !Ref AWS::NoValue
+        SecurityGroupIds:
+        - Fn::ImportValue: EksPoc-SG-EksWorkerSGId
+        TagSpecifications: 
+        - ResourceType: "instance"
+          Tags: 
+          - Key: "Name"
+            Value: !Sub "${ClusterName}-${NodeGroupName}"
+        - ResourceType: "volume"
+          Tags: 
+          - Key: "Name"
+            Value: !Sub "${ClusterName}-${NodeGroupName}"
+        - ResourceType: "network-interface"
+          Tags: 
+          - Key: "Name"
+            Value: !Sub "${ClusterName}-${NodeGroupName}"
+        UserData:
+          Fn::Base64:
+            !Sub |
+              MIME-Version: 1.0
+              Content-Type: multipart/mixed; boundary="==MYBOUNDARY=="
+
+              --==MYBOUNDARY==
+              Content-Type: text/x-shellscript; charset="us-ascii"
+
+              #!/bin/bash
+
+              # Setup an instance into an EKS cluster
+              set -o xtrace
+              /etc/eks/bootstrap.sh '${ClusterName}' \
+                --b64-cluster-ca '${B64ClusterCa}' \
+                --apiserver-endpoint '${ApiServerUrl}' \
+                --container-runtime containerd
+
+              --==MYBOUNDARY==--
+
+  ManagedNodeGroup: 
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      NodegroupName: !Ref NodeGroupName
+      ClusterName: !Ref ClusterName
+      AmiType: "AL2_x86_64"
+      InstanceTypes: 
+      - t3.large
+      CapacityType: SPOT
+      LaunchTemplate: 
+        Id: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      NodeRole: 
+        Fn::ImportValue: EksPoc-IAM-EC2k8sWorkerRoleArn
+      Labels: 
+        alpha.eksctl.io/cluster-name: !Ref ClusterName
+        alpha.eksctl.io/nodegroup-name: !Ref NodeGroupName
+      Tags: 
+        alpha.eksctl.io/nodegroup-name: !Ref NodeGroupName
+        alpha.eksctl.io/nodegroup-type: "managed"
+      Subnets:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+      ScalingConfig:
+        MinSize: 2
+        DesiredSize: 2
+        MaxSize: 4

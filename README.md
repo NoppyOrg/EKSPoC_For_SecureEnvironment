@@ -219,7 +219,7 @@ exit  #ec2-userからの戻る
 exit  #SSMからのログアウト
 ```
 
-## (5)EKSコントロールプレーン作成とk8s管理者環境の準備
+## (5)EKSコントロールプレーン&ノードグループ作成
 以下の作業は、Bastion兼高権限用インスタンスで作業します。
 これは作成したEKSクラスターの初期状態でkubectlで操作可能なIAMは、EKSクラスターを作成した権限のみのためである。
 
@@ -255,12 +255,145 @@ REGION=$( \
 aws configure set region ${REGION}
 aws configure set output json
 ```
+#### (iii)高権限環境へのkubectlセットアップ
+EksAdmin環境でkubectl操作を可能にするためには、まずHightAuth環境でkubeconfigの初期設定の初期設定を行う必要がある。そのためにまずHighAuth環境でkubectlをセットアップする。
+```shell
+# kubectlのダウンロード
+curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
+
+curl -o kubectl.sha256 https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl.sha256
+
+#チェックサム確認
+if [ $(openssl sha1 -sha256 kubectl|awk '{print $2}') = $(cat kubectl.sha256 | awk '{print $1}') ]; then echo OK; else echo NG; fi
+```
+```shell
+#kubectlのパーミッション付与と移動
+chmod +x ./kubectl
+mkdir -p $HOME/bin && mv ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
+
+#動作テスト
+kubectl version --short --client
+```
+#### (iv) ソースコードのclone
+```shell
+sudo yum -y install git
+git clone https://github.com/Noppy/EKSPoC_For_SecureEnvironment.git
+cd EKSPoC_For_SecureEnvironment
+```
 ### (5)-(b) EKSクラスター作成(k8sコントロールプレーン作成)
 ```shell
 aws cloudformation create-stack \
         --stack-name EksPoc-EksControlPlane \
         --template-body "file://./src/eks_control_plane.yaml" 
 ```
+### (5)-(c) EKSワーカーグループ作成
+#### (i)情報取得
+```shell
+#WorkerへのSSH接続設定
+KEY_NAME="CHANGE_KEY_PAIR_NAME" #SSH接続する場合
+#KEY_NAME=""                    #SSH接続しない場合はブランクを設定する 
+
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+EKS_B64_CLUSTER_CA=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`CertificateAuthorityData`].[OutputValue]' )
+EKS_API_SERVER_URL=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ControlPlaneEndpoint`].[OutputValue]' )
+echo "
+KEY_NAME           = ${KEY_NAME}
+EKS_CLUSTER_NAME   = ${EKS_CLUSTER_NAME}
+EKS_B64_CLUSTER_CA = ${EKS_B64_CLUSTER_CA}
+EKS_API_SERVER_URL = ${EKS_API_SERVER_URL}
+"
+
+```
+#### (ii)EKSノードグループ作成
+```shell
+CFN_STACK_PARAMETERS='
+[
+  {
+    "ParameterKey": "ClusterName",
+    "ParameterValue": "'"${EKS_CLUSTER_NAME}"'"
+  },
+  {
+    "ParameterKey": "B64ClusterCa",
+    "ParameterValue": "'"${EKS_B64_CLUSTER_CA}"'"
+  },
+  {
+    "ParameterKey": "ApiServerUrl",
+    "ParameterValue": "'"${EKS_API_SERVER_URL}"'"
+  },  
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "'"${KEY_NAME}"'"
+  }
+]'
+aws cloudformation create-stack \
+        --stack-name EksPoc-EksNodeGroup\
+        --template-body "file://./src/eks_worker_nodegrp.yaml" \
+        --parameters "${CFN_STACK_PARAMETERS}" ;
+
+```
+
+#### (iii)高権限環境のkubectlをコントロールプレーンに接続
+```shell
+# kubectl用のconfig取得
+aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME}
+
+#kubectlコマンドからのk8sマスターノード接続確認
+kubectl get svc
+```
+#### (iv)aws-auth ConfigMapのクラスターへの適用
+- [aws-auth設定の最新情報はこちらを参照](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-user-role.html#aws-auth-configmapg)
+
+aws-auth ConfigMap が適用済みであるかどうかを確認します。
+```shell
+
+kubectl describe configmap -n kube-system aws-auth
+```
+`Error from server (NotFound): configmaps "aws-auth" not found`というエラーが表示された場合は、以下のステップを実行してストック ConfigMap を適用します。
+```shell
+curl -o aws-auth-cm.yaml https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2020-10-29/aws-auth-cm.yaml
+```
+CloudFormationからWorkerNodeのインスタンスロールARNを取得
+```shell
+aws --output text cloudformation describe-stacks \
+    --stack-name EksPoc-IAM \
+    --query 'Stacks[].Outputs[?OutputKey==`EC2k8sWorkerRoleArn`].[OutputValue]'
+```
+aws-auth-cm.yaml編集 
+`<ARN of instance role (not instance profile)>`をWorkerNodeのインスタンスロールARNに修正
+```shell
+vi aws-auth-cm.yaml
+
+中略
+data:
+  mapRoles: |
+    - rolearn: <ARN of instance role (not instance profile)>
+以下略
+```
+aws-authを適用します。
+```shell
+# aws-auth-cm.yamlの適用
+kubectl apply -f aws-auth-cm.yaml
+
+# WorkerNode状態確認
+kubectl get nodes --watch
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
