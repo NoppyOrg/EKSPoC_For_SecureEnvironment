@@ -67,10 +67,10 @@ Resources:
 
               # Setup an instance into an EKS cluster
               set -o xtrace
-              /etc/eks/bootstrap.sh '${ClusterName}' \
+              /etc/eks/bootstrap.sh \
                 --b64-cluster-ca '${B64ClusterCa}' \
                 --apiserver-endpoint '${ApiServerUrl}' \
-                --container-runtime containerd
+                '${ClusterName}'
 
               --==MYBOUNDARY==--
 

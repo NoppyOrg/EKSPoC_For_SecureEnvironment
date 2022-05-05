@@ -49,25 +49,49 @@ Resources:
                 - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
             Action: "ec2:*"
             Resource: "*"
-  LogsEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      VpcEndpointType: Interface
-      VpcId:
-        Fn::ImportValue: EksPoc-VPC-VpcId
-      ServiceName: !Sub "com.amazonaws.${AWS::Region}.logs"
-      PrivateDnsEnabled: yes
-      SubnetIds:
-        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
-        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
-      SecurityGroupIds: 
-        - Fn::ImportValue: EksPoc-SG-VpceSGId
-      PolicyDocument:
-        Statement:
-          - 
-            Effect: Allow
-            Principal:
-              AWS:
-                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
-            Action: "logs:*"
-            Resource: "*"
+
+#  StsEndpoint:
+#    Type: AWS::EC2::VPCEndpoint
+#    Properties:
+#      VpcEndpointType: Interface
+#      VpcId:
+#        Fn::ImportValue: EksPoc-VPC-VpcId
+#      ServiceName: !Sub "com.amazonaws.${AWS::Region}.sts"
+#      PrivateDnsEnabled: yes
+#      SubnetIds:
+#        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+#        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+#      SecurityGroupIds: 
+#        - Fn::ImportValue: EksPoc-SG-VpceSGId
+#      PolicyDocument:
+#        Statement:
+#          - 
+#            Effect: Allow
+#            Principal:
+#              AWS:
+#                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
+#            Action: "sts:*"
+#            Resource: "*"
+
+#  LogsEndpoint:
+#    Type: AWS::EC2::VPCEndpoint
+#    Properties:
+#      VpcEndpointType: Interface
+#      VpcId:
+#        Fn::ImportValue: EksPoc-VPC-VpcId
+#      ServiceName: !Sub "com.amazonaws.${AWS::Region}.logs"
+#      PrivateDnsEnabled: yes
+#      SubnetIds:
+#        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+#        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+#      SecurityGroupIds: 
+#        - Fn::ImportValue: EksPoc-SG-VpceSGId
+#      PolicyDocument:
+#        Statement:
+#          - 
+#            Effect: Allow
+#            Principal:
+#              AWS:
+#                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
+#            Action: "logs:*"
+#            Resource: "*"

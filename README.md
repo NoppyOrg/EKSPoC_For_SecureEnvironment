@@ -282,64 +282,16 @@ git clone https://github.com/Noppy/EKSPoC_For_SecureEnvironment.git
 cd EKSPoC_For_SecureEnvironment
 ```
 ### (5)-(b) EKSクラスター作成(k8sコントロールプレーン作成)
+#### (i) EKSクラスター作成
+EKSクラスター作成は15分程度かかります。
 ```shell
 aws cloudformation create-stack \
         --stack-name EksPoc-EksControlPlane \
         --template-body "file://./src/eks_control_plane.yaml" 
 ```
-### (5)-(c) EKSワーカーグループ作成
-#### (i)情報取得
-```shell
-#WorkerへのSSH接続設定
-KEY_NAME="CHANGE_KEY_PAIR_NAME" #SSH接続する場合
-#KEY_NAME=""                    #SSH接続しない場合はブランクを設定する 
 
-EKS_CLUSTER_NAME=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-EksControlPlane \
-    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
-EKS_B64_CLUSTER_CA=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-EksControlPlane \
-    --query 'Stacks[].Outputs[?OutputKey==`CertificateAuthorityData`].[OutputValue]' )
-EKS_API_SERVER_URL=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-EksControlPlane \
-    --query 'Stacks[].Outputs[?OutputKey==`ControlPlaneEndpoint`].[OutputValue]' )
-echo "
-KEY_NAME           = ${KEY_NAME}
-EKS_CLUSTER_NAME   = ${EKS_CLUSTER_NAME}
-EKS_B64_CLUSTER_CA = ${EKS_B64_CLUSTER_CA}
-EKS_API_SERVER_URL = ${EKS_API_SERVER_URL}
-"
-
-```
-#### (ii)EKSノードグループ作成
-```shell
-CFN_STACK_PARAMETERS='
-[
-  {
-    "ParameterKey": "ClusterName",
-    "ParameterValue": "'"${EKS_CLUSTER_NAME}"'"
-  },
-  {
-    "ParameterKey": "B64ClusterCa",
-    "ParameterValue": "'"${EKS_B64_CLUSTER_CA}"'"
-  },
-  {
-    "ParameterKey": "ApiServerUrl",
-    "ParameterValue": "'"${EKS_API_SERVER_URL}"'"
-  },  
-  {
-    "ParameterKey": "KeyName",
-    "ParameterValue": "'"${KEY_NAME}"'"
-  }
-]'
-aws cloudformation create-stack \
-        --stack-name EksPoc-EksNodeGroup\
-        --template-body "file://./src/eks_worker_nodegrp.yaml" \
-        --parameters "${CFN_STACK_PARAMETERS}" ;
-
-```
-
-#### (iii)高権限環境のkubectlをコントロールプレーンに接続
+#### (ii)高権限環境のkubectlをコントロールプレーンに接続
+kubectlからクラスターが参照できるように設定を行います。
 ```shell
 # kubectl用のconfig取得
 aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME}
@@ -347,7 +299,10 @@ aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME}
 #kubectlコマンドからのk8sマスターノード接続確認
 kubectl get svc
 ```
-#### (iv)aws-auth ConfigMapのクラスターへの適用
+
+### (5)-(c) EKSワーカーグループ作成
+#### (i)aws-auth ConfigMapのクラスターへの適用
+ワーカーノードに適用するインスタンスロールをk8sのコントロールプレーンで認識し有効化するために、`aws-auth`でマッピングを行います。
 - [aws-auth設定の最新情報はこちらを参照](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-user-role.html#aws-auth-configmapg)
 
 aws-auth ConfigMap が適用済みであるかどうかを確認します。
@@ -381,22 +336,87 @@ aws-authを適用します。
 # aws-auth-cm.yamlの適用
 kubectl apply -f aws-auth-cm.yaml
 
+```
+
+#### (ii)ノードグループ作成前の情報取得
+```shell
+#WorkerへのSSH接続設定
+KEY_NAME="CHANGE_KEY_PAIR_NAME" #SSH接続する場合
+#KEY_NAME=""                    #SSH接続しない場合はブランクを設定する 
+
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+EKS_B64_CLUSTER_CA=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`CertificateAuthorityData`].[OutputValue]' )
+EKS_API_SERVER_URL=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ControlPlaneEndpoint`].[OutputValue]' )
+echo "
+KEY_NAME           = ${KEY_NAME}
+EKS_CLUSTER_NAME   = ${EKS_CLUSTER_NAME}
+EKS_B64_CLUSTER_CA = ${EKS_B64_CLUSTER_CA}
+EKS_API_SERVER_URL = ${EKS_API_SERVER_URL}
+"
+
+```
+#### (iii)EKSノードグループ作成
+```shell
+CFN_STACK_PARAMETERS='
+[
+  {
+    "ParameterKey": "ClusterName",
+    "ParameterValue": "'"${EKS_CLUSTER_NAME}"'"
+  },
+  {
+    "ParameterKey": "B64ClusterCa",
+    "ParameterValue": "'"${EKS_B64_CLUSTER_CA}"'"
+  },
+  {
+    "ParameterKey": "ApiServerUrl",
+    "ParameterValue": "'"${EKS_API_SERVER_URL}"'"
+  },  
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "'"${KEY_NAME}"'"
+  }
+]'
+aws cloudformation create-stack \
+        --stack-name EksPoc-EksNodeGroup\
+        --template-body "file://./src/eks_worker_nodegrp.yaml" \
+        --parameters "${CFN_STACK_PARAMETERS}" ;
+
+```
+
+#### (iv) k8sでの状態確認
+```shell
 # WorkerNode状態確認
 kubectl get nodes --watch
 ```
 
 
+## (6) k8s RBAC設定: IAMユーザ/ロールの追加
+`aws-auth`にk8sのRBAC認証に対応させたいIAMユーザ/ロールを追加します。
+手順の概要は以下のとおりです。
+- `kubectl`コマンドで`aws-auth ConfigMap`を開き編集する
+- 設定は`mapRoles`にリスト形式で追加する。追加する場合の設定はそれぞれ以下の通り
+    - `rolearn:`または`userarn`: IAMロールを追加する場合は`rolearn`、IAMユーザを追加する場合は`userarn`で、対象のARNを指定する。
+    - `username`: kubernetes内のユーザー名
+    - `groups` : k8s内でのマッピング先のグループをリストで指定する。
+- 参考情報
+    - [EKSドキュメント](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-user-role.html#aws-auth-configmap)
+
+### (6)-(a) kubectl実行用の
 
 
-
-
-
-
-
-
-
-
-
+IAMロールを追加する場合
+    - 
+### (6)-(b) 参照ユーザの追加
+```shell
+#aws-auth ConfigMapを開く
+kubectl edit -n kube-system configmap/aws-auth
+```
 
 
 
