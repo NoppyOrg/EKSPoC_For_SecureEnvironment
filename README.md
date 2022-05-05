@@ -404,166 +404,85 @@ kubectl get nodes --watch
     - `rolearn:`または`userarn`: IAMロールを追加する場合は`rolearn`、IAMユーザを追加する場合は`userarn`で、対象のARNを指定する。
     - `username`: kubernetes内のユーザー名
     - `groups` : k8s内でのマッピング先のグループをリストで指定する。
+- エディタで保存&終了(viエディタなので、`:`のあと`wq`)すると反映してくれる。
 - 参考情報
     - [EKSドキュメント](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-user-role.html#aws-auth-configmap)
 
-### (6)-(a) kubectl実行用の
+### (6)-(a) kubectl実行用EC2のインスタンスロール登録
+- 事前の情報取得
+```shell
+#kubectl実行用EC2のインスタンスロールのARN取得
+KUBECTL_ROL_ARN=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-IAM \
+    --query 'Stacks[].Outputs[?OutputKey==`EC2kubectlRoleArn`].[OutputValue]' )
 
-
-IAMロールを追加する場合
+echo "
+KUBECTL_ROL_ARN = ${KUBECTL_ROL_ARN}"
+```
+- `aws-auth ConfigMap`の編集
+```shell
+#aws-auth ConfigMapを開く
+kubectl edit -n kube-system configmap/aws-auth
+```
+```yaml
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+data:
+  mapRoles: |
+    -
+      rolearn: arn:aws:iam::616605178605:role/EksPoc-IAM-EC2k8sWorkerRole-8BI00X63GF2P
+      username: system:node:{{EC2PrivateDNSName}}
+　    groups:
+        - system:bootstrappers
+        - system:nodes
+<↓ココから下を追加>
     - 
+      rolearn: "$KUBECTL_ROL_ARN のARN値を指定"
+      username: kubectladmin
+      groups:
+        - system:masters
+<ここまで>
+<以下略>
+```
+
 ### (6)-(b) 参照ユーザの追加
 ```shell
 #aws-auth ConfigMapを開く
 kubectl edit -n kube-system configmap/aws-auth
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-```shell
-EKS_CLUSTER_NAME=EksPoC-Cluster
-EKS_VERSION=1.22
-
-#CloudFormationからの情報収集
-EKS_SERVICE_ROLE=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-IAM \
-    --query 'Stacks[].Outputs[?OutputKey==`EksServiceRoleArn`].[OutputValue]' )
-EKS_KMS_KEY_ARN=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-KMS \
-    --query 'Stacks[].Outputs[?OutputKey==`KeyArn`].[OutputValue]' )
-EKS_CLUSTER_SUBNET1=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-VPC \
-    --query 'Stacks[].Outputs[?OutputKey==`PrivateSubnet1Id`].[OutputValue]' )
-EKS_CLUSTER_SUBNET2=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-VPC \
-    --query 'Stacks[].Outputs[?OutputKey==`PrivateSubnet2Id`].[OutputValue]' )
-    
-EKS_CLUSTER_SG=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-SG \
-    --query 'Stacks[].Outputs[?OutputKey==`EksCtlPlaneSGId`].[OutputValue]' )
-
-#Check Parameter
-echo -e "
-EKS_SERVICE_ROLE    = ${EKS_SERVICE_ROLE}
-EKS_KMS_KEY_ARN     = ${EKS_KMS_KEY_ARN}
-EKS_CLUSTER_SUBNET1 = ${EKS_CLUSTER_SUBNET1}
-EKS_CLUSTER_SUBNET2 = ${EKS_CLUSTER_SUBNET2}
-EKS_CLUSTER_SG      = ${EKS_CLUSTER_SG}"
-
-```
-#### (ii) EKSクラスター作成
-```shell
-#クラスター作成
-aws eks create-cluster \
-    --name ${EKS_CLUSTER_NAME} \
-    --kubernetes-version ${EKS_VERSION} \
-    --role-arn ${EKS_SERVICE_ROLE} \
-    --logging '
-        {"clusterLogging": [
-            { "types": ["api","audit","authenticator","controllerManager","scheduler"],
-              "enabled": true 
-            }
-        ]}' \
-    --encryption-config '
-        [
-            {
-                "resources":["secrets"],
-                "provider":{
-                    "keyArn":"'"${EKS_KMS_KEY_ARN}"'"
-                }
-            }
-        ]' \
-    --resources-vpc-config \
-        subnetIds=${EKS_CLUSTER_SUBNET1},${EKS_CLUSTER_SUBNET2},securityGroupIds=${EKS_CLUSTER_SG},endpointPublicAccess=false,endpointPrivateAccess=true ;
-
-```
-### (5)-(c) EksAdmin環境の準備
-#### (i)高権限環境へのkubectlセットアップ
-EksAdmin環境でkubectl操作を可能にするためには、まずHightAuth環境でkubeconfigの初期設定の初期設定を行う必要がある。そのためにまずHighAuth環境でkubectlをセットアップする。
-```shell
-# kubectlのダウンロード
-curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
-
-curl -o kubectl.sha256 https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl.sha256
-
-#チェックサム確認
-if [ $(openssl sha1 -sha256 kubectl|awk '{print $2}') = $(cat kubectl.sha256 | awk '{print $1}') ]; then echo OK; else echo NG; fi
-```
-```shell
-#kubectlのパーミッション付与と移動
-chmod +x ./kubectl
-mkdir -p $HOME/bin && mv ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
-echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
-
-#動作テスト
-kubectl version --short --client
-```
-#### (ii)高権限環境のkubectlをコントロールプレーンに接続
-```shell
-# kubectl用のconfig取得
-aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME}
-
-#kubectlコマンドからのk8sマスターノード接続確認
-kubectl get svc
-```
-#### (iii)aws-auth ConfigMapのクラスターへの適用
-- [aws-auth設定の最新情報はこちらを参照](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-user-role.html#aws-auth-configmapg)
-
-aws-auth ConfigMap が適用済みであるかどうかを確認します。
-```shell
-
-kubectl describe configmap -n kube-system aws-auth]
-```
-`Error from server (NotFound): configmaps "aws-auth" not found`というエラーが表示された場合は、以下のステップを実行してストック ConfigMap を適用します。
-```shell
-curl -o aws-auth-cm.yaml https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2020-10-29/aws-auth-cm.yaml
-```
-CloudFormationからWorkerNodeのインスタンスロールARNを取得
-```shell
-aws --output text cloudformation describe-stacks \
-    --stack-name EksPoc-IAM \
-    --query 'Stacks[].Outputs[?OutputKey==`EC2k8sWorkerRoleArn`].[OutputValue]'
-```
-aws-auth-cm.yaml編集 
-`<ARN of instance role (not instance profile)>`をWorkerNodeのインスタンスロールARNに修正
-```shell
-vi aws-auth-cm.yaml
-
-中略
+```yaml
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
 data:
   mapRoles: |
-    - rolearn: <ARN of instance role (not instance profile)>
-以下略
+    -
+      rolearn: arn:aws:iam::616605178605:role/EksPoc-IAM-EC2k8sWorkerRole-8BI00X63GF2P
+      username: system:node:{{EC2PrivateDNSName}}
+　    groups:
+        - system:bootstrappers
+        - system:nodes
+    - 
+      rolearn: "$KUBECTL_ROL_ARN のARN値を指定"
+      username: kubectladmin
+      groups:
+        - system:masters
+<↓ココから下を追加>
+    - 
+      rolearn: "コンソール操作時の権限のARNを指定"
+      username: consoleadmin
+      groups:
+        - system:masters
+<ここまで>
+<以下略>
 ```
-aws-authを適用します。
-```shell
-# aws-auth-cm.yamlの適用
-kubectl apply -f aws-auth-cm.yaml
-
-# WorkerNode状態確認
-kubectl get nodes --watch
-```
 
 
+## (7) AutoScaling設定
 
-
-
-
-EksAdminのロールをk8sのマップに追加
-```shell
-#k8s管理者用のIAMロールのARN取得
-aws --output text cloudformation describe-stacks \
-    --stack-name EksPoc-IAM \
-    --query 'Stacks[].Outputs[?OutputKey==`EC2kubectlRoleArn`].[OutputValue]'
-
-#aws-auth ConfigMapを開く
-kubectl edit -n kube-system configmap/aws-auth
+## (8) ELB設定

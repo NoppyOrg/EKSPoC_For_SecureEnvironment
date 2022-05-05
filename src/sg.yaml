@@ -43,6 +43,12 @@ Resources:
       Tags:
         - Key: Name
           Value: EksPoc-EksWorkerSG
+  AllowAllTrafilcItself:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksWorkerSG
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref EksWorkerSG
   AllowSshEksWorkerSG:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
