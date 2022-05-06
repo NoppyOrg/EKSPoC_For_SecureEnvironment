@@ -482,7 +482,88 @@ data:
 <以下略>
 ```
 
+## (7) OIDCプロバイダ
+### (7)-(a) jqのインストール
+コマンドの中でJSONデータを処理するjqコマンドを利用するため、予めjqをインストールします。
+```shell
+sudo yum -y install jq
+```
+### (7)-(b) OIDCプロバイダのサムプリント取得
+サムプリントは、証明書の暗号化ハッシュです。
+- 参考情報
+    - [EKSユーザーガイド: OIDCプロバイダ作成](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
+    - [IAMユーザーガイド: OIDCプロバイダ作成](https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/id_roles_providers_create_oidc.html#manage-oidc-provider-cli)
+    - [IAMユーザーガイド: サムプリント取得](https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html)
+    - [Terraformでeksのiam role per podを実現する](https://medium.com/@sueken0117/terraform%E3%81%A7eks%E3%81%AEiam-role-per-pod%E3%82%92%E5%AE%9F%E7%8F%BE%E3%81%99%E3%82%8B-5b9b1a95eeb9)
 
-## (7) AutoScaling設定
 
-## (8) ELB設定
+#### (i) EKSクラスターからOICD用のURLを取得(CloudFormationのスタック出力結果からの取得)
+```shell
+OpenIdConnectIssuerUrl=$(aws --output text \
+    cloudformation describe-stacks \
+        --stack-name EksPoc-EksControlPlane \
+        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]' )
+```
+#### (ii) OICDプロバイダーのから証明書を取得
+```shell
+# IdP の設定ドキュメント取得のURL生成
+URL="${OpenIdConnectIssuerUrl}/.well-known/openid-configuration"
+echo $URL
+
+#ドメイン取得
+FQDN=$(curl $URL 2>/dev/null | jq -r '.jwks_uri' | sed -E 's/^.*(http|https):\/\/([^/]+).*/\2/g')
+echo $FQDN
+
+#サーバー証明書の取得
+ echo | openssl s_client -connect $FQDN:443 -servername $FQDN -showcerts 
+```
+opensslコマンドを実行すると、次のような証明書が複数表示されます。
+複数の証明書のうち表示される最後 (コマンド出力の最後) の証明書を特定します。
+```
+-----BEGIN CERTIFICATE-----
+ MIICiTCCAfICCQD6m7oRw0uXOjANBgkqhkiG9w0BAQUFADCBiDELMAkGA1UEBhMC
+ VVMxCzAJBgNVBAgTAldBMRAwDgYDVQQHEwdTZWF0dGxlMQ8wDQYDVQQKEwZBbWF6
+ b24xFDASBgNVBAsTC0lBTSBDb25zb2xlMRIwEAYDVQQDEwlUZXN0Q2lsYWMxHzAd
+ BgkqhkiG9w0BCQEWEG5vb25lQGFtYXpvbi5jb20wHhcNMTEwNDI1MjA0NTIxWhcN
+ MTIwNDI0MjA0NTIxWjCBiDELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAldBMRAwDgYD
+ VQQHEwdTZWF0dGxlMQ8wDQYDVQQKEwZBbWF6b24xFDASBgNVBAsTC0lBTSBDb25z
+ b2xlMRIwEAYDVQQDEwlUZXN0Q2lsYWMxHzAdBgkqhkiG9w0BCQEWEG5vb25lQGFt
+ YXpvbi5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMaK0dn+a4GmWIWJ
+ 21uUSfwfEvySWtC2XADZ4nB+BLYgVIk60CpiwsZ3G93vUEIO3IyNoH/f0wYK8m9T
+ rDHudUZg3qX4waLG5M43q7Wgc/MbQITxOUSQv7c7ugFFDzQGBzZswY6786m86gpE
+ Ibb3OhjZnzcvQAaRHhdlQWIMm2nrAgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAtCu4
+ nUhVVxYUntneD9+h8Mg9q6q+auNKyExzyLwaxlAoo7TJHidbtS4J5iNmZgXL0Fkb
+ FFBjvSfpJIlJ00zbhNYS5f6GuoEDmFJl0ZxBHjJnyp378OD8uTs7fLvjx79LjSTb
+ NYiytVbZPQUQ5Yaxu2jXnimvw3rrszlaEXAMPLE=
+ -----END CERTIFICATE-----
+```
+ 証明書 (`-----BEGIN CERTIFICATE-----` および `-----END CERTIFICATE-----` 行を含む) をコピーして、テキストファイルに貼り付けます。次に、`certificate.crt` という名前でファイルを保存します。
+```shell
+cat > certificate.crt
+コピーした証明書を貼り付けて、最後にCTRL+Dで終了する
+
+#ファイルの確認
+cat certificate.crt
+```
+
+#### (iii) サムプリントの取得
+```shell
+THUMBPRINT=$(openssl x509 -in certificate.crt -fingerprint -noout | sed -E 's/SHA1 Fingerprint=(.*)/\1/g' | sed -E 's/://g')
+echo $THUMBPRINT
+```
+### (7)-(c) OIDCプロバイダ作成
+```shell
+aws iam create-open-id-connect-provider \
+    --url "${OpenIdConnectIssuerUrl}" \
+    --thumbprint-list "${THUMBPRINT}" \
+    --client-id-list "sts.amazonaws.com"
+
+```
+
+
+
+OpenIdConnectIssuerUrl
+
+## (8) AutoScaling設定
+
+## (9) ELB設定
