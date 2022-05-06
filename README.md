@@ -3,7 +3,9 @@
 # 作成環境
 ![CFn_configuration](./Documents/EKS_PoC.png)
 
-# 作成手順
+# ハンズオン(その１): シンプルなEKSプライベートクラスター作成
+シンプルなEKSプライベートクラスターを作成し、動作テストでpodを動かします。
+
 ## (1)事前設定
 ### (1)-(a) 作業環境の準備
 下記を準備します。
@@ -482,6 +484,103 @@ data:
 <以下略>
 ```
 
+## (7) 動作テスト(podの起動)
+作成したEKSのkubernetes環境の動作確認のために事前にECRに登録したhttpdのDockerイメージを利用し以下のようなサービスを作成して、端末からアクセスできるかテストします。
+![kubernetesのテスト環境](./Documents/k8s_simple_service_arch.svg)
+
+参考情報
+- [【Kubernetes】Serviceを作成してローカルPCからアクセスしてみる](https://amateur-engineer-blog.com/kubernetes-service/)
+
+### (7)-(a) ECRリポジトリのURL取得
+```shell
+REPO_URL=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-Ecr \
+    --query 'Stacks[].Outputs[?OutputKey==`EcrRepositoryUri`].[OutputValue]' )
+echo "
+REPO_URL = ${REPO_URL}
+"
+```
+### (7)-(b) kubernetestのDeploymentとService作成
+#### (i) 定義ファイルの準備
+```shell
+#Deployment定義ファイルの作成
+#環境固有となるECRレポジトリURL情報をDeploymentに設定します。
+sed -e "s;REPO_URL;${REPO_URL};" k8s_define/httpd-deployment.yaml.template > httpd-deployment.yaml
+cat httpd-deployment.yaml
+
+#Service定義ファイルの確認
+cat k8s_define/httpd-service.yaml
+```
+#### (ii) DeploymentとServiceの適用
+kubectlコマンドを利用して定義を適用します。
+```shell
+#Deploymentの適用
+kubectl apply -f httpd-deployment.yaml
+
+#Serviceの適用
+kubectl apply -f k8s_define/httpd-service.yaml
+```
+#### (iii) 状態を確認します。
+- Deploymentの状態確認
+```shell
+kubectl get deployments -o wide httpd-deployment
+
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES                                                                 SELECTOR
+httpd-deployment   3/3     3            3           9m13s   httpd        616605178605.dkr.ecr.ap-northeast-1.amazonaws.com/ekspoc-repo:latest   app=httpd-pod
+```
+- Podの状態確認
+```shell
+kubectl get pods -o wide 
+
+NAME                               READY   STATUS    RESTARTS   AGE     IP            NODE                                             NOMINATED NODE   READINESS GATES
+httpd-deployment-dbb8b7f8c-nbkg2   1/1     Running   0          9m55s   10.1.43.41    ip-10-1-56-7.ap-northeast-1.compute.internal     <none>           <none>
+httpd-deployment-dbb8b7f8c-vzpjj   1/1     Running   0          9m55s   10.1.34.253   ip-10-1-33-162.ap-northeast-1.compute.internal   <none>           <none>
+httpd-deployment-dbb8b7f8c-xk7gw   1/1     Running   0          9m55s   10.1.47.88    ip-10-1-33-162.ap-northeast-1.compute.internal   <none>           <none>
+```
+- Service状態確認
+```shell
+kubectl get svc -o wide httpd-service
+
+NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE     SELECTOR
+httpd-service   ClusterIP   172.20.170.144   <none>        8080/TCP   9m31s   app=httpd-pod
+```
+#### (iv) クライアントからの接続確認
+ClusterIPは、通常kubernetesのクラスター内からのみからのアクセスとなりますが、kubectlコマンドでフォワードさせることでクラスター外の端末からアクセスが可能となります。
+- ポートフォワーディング起動(この状態でwaitになります。終了する場合は`CTRL+C`で終了)
+```shell
+kubectl port-forward service/httpd-service 9999:8080
+Forwarding from 127.0.0.1:9999 -> 80
+Forwarding from [::1]:9999 -> 80
+```
+- 別端末から`kubectl port-forward`を実行しているOS上にログインします
+- 別端末で下記コマンドでhttpサーバの情報が参照できたら成功です
+```shell
+curl http://localhost:9999
+
+<html>
+  <head>
+    <title>PHP Sample</title>
+  </head>
+  <body>
+    httpd-deployment-dbb8b7f8c-nbkg2  </body>
+</html>
+```
+
+### (7)-(c) ServiceとDeploymentの削除
+```shell
+#Serviceの削除
+kubectl delete -f k8s_define/httpd-service.yaml
+
+#Deploymentの削除
+kubectl delete -f httpd-deployment.yaml
+```
+
+
+
+
+
+
+
 ## (7) OIDCプロバイダ
 ### (7)-(a) jqのインストール
 コマンドの中でJSONデータを処理するjqコマンドを利用するため、予めjqをインストールします。
@@ -560,10 +659,13 @@ aws iam create-open-id-connect-provider \
 
 ```
 
-
-
-OpenIdConnectIssuerUrl
-
 ## (8) AutoScaling設定
+
+
+
+
+https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md
+
+https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/CA_with_AWS_IAM_OIDC.md
 
 ## (9) ELB設定

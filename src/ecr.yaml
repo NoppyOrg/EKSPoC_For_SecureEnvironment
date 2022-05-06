@@ -123,3 +123,10 @@ Outputs:
     Value: !GetAtt EcrRepository.Arn
     Export:
       Name: !Sub ${AWS::StackName}-EcrRepositoryArn
+  EcrRepositoryUri:
+    Description: Ecr Repository Url
+    Value: !GetAtt EcrRepository.RepositoryUri
+    Export:
+      Name: !Sub ${AWS::StackName}-EcrRepositoryUri
+
+      
