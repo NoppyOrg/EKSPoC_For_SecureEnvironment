@@ -47,12 +47,21 @@ Resources:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref EksWorkerSG
+      Description: "Allow All Trafic From Worker nodes"
       IpProtocol: -1
       SourceSecurityGroupId: !Ref EksWorkerSG
+  AllowAllTrafilcFromControlPlane:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksWorkerSG
+      Description: "Allow All Trafic From Control Plane"
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref EksCtlPlaneSG
   AllowSshEksWorkerSG:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref EksWorkerSG
+      Description: "Allow ssh from Bastion"
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
@@ -67,7 +76,14 @@ Resources:
       Tags:
         - Key: Name
           Value: EksPoc-EksCtlPlaneSG
-  AllowHttpsToEksAdminSGEksAdminSG:
+  AllowAllTraficFromWorkerNodeEksCtlPlaneSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksCtlPlaneSG
+      Description: "Allow All Trafic From Worker nodes"
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref EksWorkerSG
+  AllowHttpsToEksAdminSGEksEksCtlPlaneSG:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref EksCtlPlaneSG
@@ -75,15 +91,7 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: !Ref EksAdminSG
-  AllowHttpsToEksWorkerSGEksAdminSG:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref EksCtlPlaneSG
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-      SourceSecurityGroupId: !Ref EksWorkerSG
-  AllowHttpsToBastionSGEksAdminSG:
+  AllowHttpsToBastionSGEksEksCtlPlaneSG:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref EksCtlPlaneSG
