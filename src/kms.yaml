@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Deploy a Customer Key"
+#----------------------------------------------
+Resources:
+  Key:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "symmetric KMS key for EKS"
+      EnableKeyRotation: true
+      PendingWindowInDays: 7
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: AllowIAMPermissions
+        Statement:
+          - 
+            Sid: EnableIAMUserPermissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+  KeyAlias:
+    Type: AWS::KMS::Alias
+    Properties: 
+      AliasName: "alias/kmskey"
+      TargetKeyId: !Ref Key
+#----------------------------------------------
+Outputs:
+  KeyId:
+    Value: !Ref Key
+    Export:
+      Name: !Sub ${AWS::StackName}-KeyId
+  KeyArn:
+    Value: !GetAtt Key.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-KeyArn

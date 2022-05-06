@@ -1,0 +1,161 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy SecurityGroups
+#----------------------------------------------
+Resources:
+  #------------------ Security Groups for public instances
+  BastionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: For Bastion Instances SG
+      VpcId: 
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      Tags:
+        - Key: Name
+          Value: EksPoc-BastionSG
+  #--
+  DockerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: For Docker Instances SG
+      VpcId: 
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      Tags:
+        - Key: Name
+          Value: EksPoc-DockerSG
+  #--
+  EksAdminSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: For EKS Admin Instances SG
+      VpcId: 
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      Tags:
+        - Key: Name
+          Value: EksPoc-EksAdminSG
+
+  #------------------ Security Groups for EKS
+  EksWorkerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: For EKS Worker Nodes
+      VpcId: 
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      Tags:
+        - Key: Name
+          Value: EksPoc-EksWorkerSG
+  AllowAllTrafilcItself:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksWorkerSG
+      Description: "Allow All Trafic From Worker nodes"
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref EksWorkerSG
+  AllowAllTrafilcFromControlPlane:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksWorkerSG
+      Description: "Allow All Trafic From Control Plane"
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref EksCtlPlaneSG
+  AllowSshEksWorkerSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksWorkerSG
+      Description: "Allow ssh from Bastion"
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId: !Ref BastionSG
+  #--
+  EksCtlPlaneSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: For EKS Control Plane
+      VpcId: 
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      Tags:
+        - Key: Name
+          Value: EksPoc-EksCtlPlaneSG
+  AllowAllTraficFromWorkerNodeEksCtlPlaneSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksCtlPlaneSG
+      Description: "Allow All Trafic From Worker nodes"
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref EksWorkerSG
+  AllowHttpsToEksAdminSGEksEksCtlPlaneSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksCtlPlaneSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref EksAdminSG
+  AllowHttpsToBastionSGEksEksCtlPlaneSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EksCtlPlaneSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref BastionSG
+  #------------------ Security Groups for VPCE
+  VpceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: For VPC Endpoints
+      VpcId: 
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      Tags:
+        - Key: Name
+          Value: EksPoc-VpceSG
+  AllowHttpsToEksWorkerSGVpceSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VpceSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref EksWorkerSG
+  AllowHttpsToDockerSGVpceSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VpceSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref DockerSG
+Outputs:
+  #------------------ Security Group
+  BastionSGId:
+    Description: BastionSG Id
+    Value: !Ref BastionSG
+    Export:
+      Name: !Sub ${AWS::StackName}-BastionSGId
+  DockerSGId:
+    Description: DockerSG Id
+    Value: !Ref DockerSG
+    Export:
+      Name: !Sub ${AWS::StackName}-DockerSGId
+  EksAdminSGId:
+    Description: EksAdminSG Id
+    Value: !Ref EksAdminSG
+    Export:
+      Name: !Sub ${AWS::StackName}-EksAdminSGId
+  #--
+  EksWorkerSGId:
+    Description: EksWorkerSG Id
+    Value: !Ref EksWorkerSG
+    Export:
+      Name: !Sub ${AWS::StackName}-EksWorkerSGId
+  EksCtlPlaneSGId:
+    Description: EksCtlPlaneSG Id
+    Value: !Ref EksCtlPlaneSG
+    Export:
+      Name: !Sub ${AWS::StackName}-EksCtlPlaneSGId
+  #--
+  VpceSGId:
+    Description: VpceSG Id
+    Value: !Ref VpceSG
+    Export:
+      Name: !Sub ${AWS::StackName}-VpceSGId

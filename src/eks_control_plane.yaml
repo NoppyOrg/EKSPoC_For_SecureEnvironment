@@ -1,0 +1,70 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EKS cluster'
+#----------------------------------------------
+Parameters:
+  #------------------
+  ClusterName:
+    Type: String
+    Default: EksPoC-PrivateCluster
+  ClusterVersion:
+    Type: String
+    Default: "1.22"
+#----------------------------------------------
+Resources:
+  ControlPlane:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref ClusterName
+      Version: !Ref ClusterVersion
+      RoleArn:
+        Fn::ImportValue: EksPoc-IAM-EksServiceRoleArn
+      KubernetesNetworkConfig:
+        IpFamily: ipv4
+      ResourcesVpcConfig:
+        EndpointPrivateAccess: true
+        EndpointPublicAccess: false
+        SecurityGroupIds:
+        - Fn::ImportValue: EksPoc-SG-EksCtlPlaneSGId
+        SubnetIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+      Logging:
+        ClusterLogging:
+           EnabledTypes:
+            - Type: api
+            - Type: audit
+            - Type: authenticator
+            - Type: controllerManager
+            - Type: scheduler
+      EncryptionConfig: 
+        - 
+          Provider: 
+            KeyArn:
+              Fn::ImportValue: EksPoc-KMS-KeyArn
+          Resources:
+            - secrets
+#----------------------------------------------
+Outputs:
+  ClusterName:
+    Value: !Ref ClusterName
+    Export:
+      Name: !Sub ${AWS::StackName}-ClusterName
+  ControlPlaneArn:
+    Value: !GetAtt ControlPlane.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ControlPlaneArn
+  CertificateAuthorityData:
+    Value: !GetAtt ControlPlane.CertificateAuthorityData
+  ControlPlaneEndpoint:
+    Value: !GetAtt ControlPlane.Endpoint
+    Export:
+      Name: !Sub ${AWS::StackName}-ControlPlaneEndpoint
+  OpenIdConnectIssuerUrl:
+    Value: !GetAtt ControlPlane.OpenIdConnectIssuerUrl
+    Export:
+      Name: !Sub ${AWS::StackName}-OpenIdConnectIssuerUrl
+
+
+
+      

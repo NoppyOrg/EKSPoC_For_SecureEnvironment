@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy VPCEndpoints
+#----------------------------------------------
+Resources:
+  #------------------ VPC Endpoints for the ECR repository
+  EcrDkrEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.dkr"
+      PrivateDnsEnabled: yes
+      SubnetIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+      SecurityGroupIds: 
+        - Fn::ImportValue: EksPoc-SG-VpceSGId
+      PolicyDocument:
+        Statement:
+          - 
+            Effect: Allow
+            Principal: "*" 
+            Action:
+              - "ecr:*"
+            Resource:
+              - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+              #EKS用の公式コンテナイメージ取得用
+              #https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-ons-images.html
+              - !Sub "arn:${AWS::Partition}:ecr:*:877085696533:repository/*"
+              - !Sub "arn:${AWS::Partition}:ecr:*:800184023465:repository/*"
+              - !Sub "arn:${AWS::Partition}:ecr:*:602401143452:repository/*"
+              - !Sub "arn:${AWS::Partition}:ecr:*:590381155156:repository/*"
+              - !Sub "arn:${AWS::Partition}:ecr:*:558608220178:repository/*"
+  #--
+  EcrApiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.api"
+      PrivateDnsEnabled: yes
+      SubnetIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+      SecurityGroupIds: 
+        - Fn::ImportValue: EksPoc-SG-VpceSGId
+      PolicyDocument:
+        Statement:
+          - 
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
+            Action:
+              - "ecr:GetAuthorizationToken"
+            Resource: "*"
+          - 
+            Effect: Allow
+            Principal: "*" 
+            NotAction:
+              - "ecr:GetAuthorizationToken"
+            Resource:
+              - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+  S3VpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Gateway
+      VpcId:
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      RouteTableIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1RouteTableId
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2RouteTableId
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:*'
+            Resource:
+              # Allow connections to the Amazon Linux2 yum repositories
+              - !Sub "arn:aws:s3:::amazonlinux.${AWS::Region}.amazonaws.com/*"
+              - !Sub "arn:aws:s3:::amazonlinux-2-repos-${AWS::Region}/*"
+              # For ECR
+              - !Sub "arn:aws:s3:::prod-${AWS::Region}-starport-layer-bucket/*"
+  #------------------ VPC Endpoints for EKS
+  #k8s kubeletからEC2エンドポイントアクセスのために必要
+  Ec2Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2"
+      PrivateDnsEnabled: yes
+      SubnetIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+      SecurityGroupIds: 
+        - Fn::ImportValue: EksPoc-SG-VpceSGId
+      PolicyDocument:
+        Statement:
+          - 
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
+            Action: "ec2:*"
+            Resource: "*"

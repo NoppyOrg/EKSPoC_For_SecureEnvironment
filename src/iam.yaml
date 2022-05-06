@@ -1,0 +1,261 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy IAM Role for Instances
+#----------------------------------------------
+Resources:
+  # EC2インスタンスに付与するインスタンスロールの作成を行う
+  # ここでは、マネージドポリシーのみ付与し、
+  # S3などリソースを意識するポリシーは各リソースデプロイ時にアタッチする
+  #---IAM Role(For Instances)
+  #---
+  EC2HighAuthorityRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+  EC2HighAuthorityRoleProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref EC2HighAuthorityRole
+  #--
+  EC2DockerRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: AllowPushPullDockerImage
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              -
+                # docker一時トークン(12時間有効)取得。GetAuthorizationTokenは、Resource未サポート
+                Sid: GetAuthorizationToken
+                Effect: Allow
+                Action: 
+                  - ecr:GetAuthorizationToken
+                  - ecr:DescribeRepositories
+                  - ecr:ListImages
+                  - "ecr:Describe*"
+                Resource: "*"
+              -
+                Sid: AllowPushPull
+                Effect: Allow
+                Action: 
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+  EC2DockerRolePlofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref EC2DockerRole
+  #---
+  EC2kubectlRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: EcrReadListPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: GetRepositories
+                Effect: Allow
+                Action: 
+                  - ecr:DescribeRepositories
+                Resource: "*"        
+              - Sid: "AllowEcrReadList"
+                Effect: Allow
+                Action:
+                  - ecr:DescribeImages
+                  - ecr:ListImages
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+  EC2kubectlRolePlofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref EC2kubectlRole
+  #---
+  EC2k8sWorkerRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        #For EKS
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+      #AmazonEC2ContainerRegistryReadOnlyを利用せず
+      #より制限されたECRアクセスのポリシーを利用する場合は以下のinlineポリシーをコメントアウト
+      #Policies:
+      #  - PolicyName: PullDockerImageFromMyselfEcrRepository
+      #    PolicyDocument:
+      #      Version: "2012-10-17"
+      #      Statement:
+      #        -
+      #          # docker一時トークン(12時間有効)取得。GetAuthorizationTokenは、Resource未サポート
+      #          Sid: GetAuthorizationToken
+      #          Effect: Allow
+      #          Action: 
+      #            - ecr:GetAuthorizationToken
+      #          Resource: "*"
+      #        -
+      #          Sid: AllowPushPull
+      #          Effect: Allow
+      #          Action: 
+      #            - ecr:BatchCheckLayerAvailability
+      #            - ecr:GetDownloadUrlForLayer
+      #          Resource:
+      #            - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+  EC2k8sWorkerRoleProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref EC2k8sWorkerRole
+  #---
+  # EKS Service Role(For k8s control plane)
+  #---
+  EksServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - eks.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSVPCResourceController  #PodへのSGデプロイなどで利用
+Outputs:
+  #---------------- IAM Role
+  EC2HighAuthorityRoleArn:
+    Description: Role Arn of EC2HighAuthorityRole
+    Value: !GetAtt EC2HighAuthorityRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2HighAuthorityRoleArn
+  EC2HighAuthorityRoleName:
+    Description: Role Name of EC2HighAuthorityRole
+    Value: !Ref EC2HighAuthorityRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2HighAuthorityRoleName
+  EC2HighAuthorityRoleProfile:
+    Description: Arn of EC2HighAuthorityRoleProfile
+    Value: !Ref EC2HighAuthorityRoleProfile
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2HighAuthorityRoleProfile
+  #--
+  EC2DockerRoleArn:
+    Description: Role Arn of EC2DockerRole
+    Value: !GetAtt EC2DockerRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2DockerRoleArn
+  EC2DockerRoleName:
+    Description: Role Name of EC2DockerRole
+    Value: !Ref EC2DockerRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2DockerRoleName
+  EC2DockerRolePlofile:
+    Description: Arn of EC2DockerRolePlofile
+    Value: !Ref EC2DockerRolePlofile
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2DockerRolePlofile
+  #--
+  EC2kubectlRoleArn:
+    Description: Role Arn of EC2kubectlRole
+    Value: !GetAtt EC2kubectlRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2kubectlRoleArn
+  EC2kubectlRoleName:
+    Description: Role Name of EC2kubectlRole
+    Value: !Ref EC2kubectlRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2kubectlRoleName
+  EC2kubectlRolePlofile:
+    Description: Arn of EC2kubectlRolePlofile
+    Value: !Ref EC2kubectlRolePlofile
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2kubectlRolePlofile
+  #--
+  EC2k8sWorkerRoleArn:
+    Description: Role Arn of EC2k8sWorkerRole
+    Value: !GetAtt EC2k8sWorkerRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2k8sWorkerRoleArn
+  EC2k8sWorkerRoleName:
+    Description: Role Name of EC2k8sWorkerRole
+    Value: !Ref EC2k8sWorkerRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2k8sWorkerRoleName
+  EC2k8sWorkerRoleProfile:
+    Description: Arn of EC2k8sWorkerRoleProfile
+    Value: !Ref EC2k8sWorkerRoleProfile
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2k8sWorkerRoleProfile
+  #--
+  EksServiceRoleArn:
+    Description: Role Arn of EksServiceRole
+    Value: !GetAtt EksServiceRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EksServiceRoleArn
+  EksServiceRoleName:
+    Description: Role Name of EksServiceRole
+    Value: !Ref EksServiceRole
+    Export:
+      Name: !Sub ${AWS::StackName}-EksServiceRoleName
