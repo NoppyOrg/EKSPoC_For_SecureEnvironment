@@ -1,11 +1,11 @@
 # CloudFormation: EKS PoC For Secure Environment
 セキュアな環境でEKSを利用するための検証用環境を作成するCloudFormationテンプレートです。
 # 作成環境
-![CFn_configuration](./Documents/EKS_PoC.png)
+![Overall Architecture](./Documents/overall_architecture.svg)
 
 # ハンズオン(その１): シンプルなEKSプライベートクラスター作成
 シンプルなEKSプライベートクラスターを作成し、動作テストでpodを動かします。
-
+![Simple EKS Private Cluster Architecture](./Documents/basic_arch.svg)
 ## (1)事前設定
 ### (1)-(a) 作業環境の準備
 下記を準備します。
@@ -578,6 +578,7 @@ kubectl delete -f httpd-deployment.yaml
 # ハンズオン(その2): ClusterAutoscalerを追加しk8sでスケールイン／アウトをコントロールする
 以下の作業は、Bastion兼高権限用インスタンスで作業します。
 作業のカレントディレクトリは、githubからcloneしたEKSPoC_For_SecureEnvironmentのリポジトリ直下を前提としています。
+![Add Autoscaler Architecture](./Documents/arch-add_Autoscaler.svg)
 
 ## (1) OIDCプロバイダ
 ### (1)-(a) jqのインストール
@@ -955,6 +956,10 @@ kubectl get nodes
 また、Autoscalingの`Desired capacity`が変更されているかを確認する。
 
 
-
-
 ## (9) ELB設定
+AWS Load Balancer Controllerを利用した構成。
+
+- 参考情報
+    - [EKSユーザーガイド: AWS Load Balancer Controller アドオンのインストール](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/aws-load-balancer-controller.html)
+
+以下、別途記載
