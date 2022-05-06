@@ -50,8 +50,8 @@ aws --profile ${PROFILE} --region ${REGION} \
 ```shell
 aws --profile ${PROFILE} --region ${REGION} \
     cloudformation create-stack \
-        --stack-name EksPoc-Vpce \
-        --template-body "file://./src/vpce.yaml" 
+        --stack-name EksPoc-VpceSimple \
+        --template-body "file://./src/vpce_simple.yaml" 
 ```
 
 ## (3)IAMロール&KMSキー作製
@@ -575,19 +575,24 @@ kubectl delete -f k8s_define/httpd-service.yaml
 kubectl delete -f httpd-deployment.yaml
 ```
 
+# ハンズオン(その2): ClusterAutoscalerを追加しk8sでスケールイン／アウトをコントロールする
+以下の作業は、Bastion兼高権限用インスタンスで作業します。
+作業のカレントディレクトリは、githubからcloneしたEKSPoC_For_SecureEnvironmentのリポジトリ直下を前提としています。
 
-
-
-
-
-
-## (7) OIDCプロバイダ
-### (7)-(a) jqのインストール
+## (1) OIDCプロバイダ
+### (1)-(a) jqのインストール
 コマンドの中でJSONデータを処理するjqコマンドを利用するため、予めjqをインストールします。
 ```shell
 sudo yum -y install jq
 ```
-### (7)-(b) OIDCプロバイダのサムプリント取得
+### (1)-(b) VPCエンドポイント作成
+OIDCの認証情報取得のためにstsへのアクセスを行うため、STSのVPCエンドポイントを追加します。
+```shell
+ aws cloudformation create-stack \
+        --stack-name EksPoc-Vpce-oidc \
+        --template-body "file://./src/vpce_for_oidc.yaml"
+```
+### (1)-(c) OIDCプロバイダのサムプリント取得
 サムプリントは、証明書の暗号化ハッシュです。
 - 参考情報
     - [EKSユーザーガイド: OIDCプロバイダ作成](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
@@ -650,7 +655,7 @@ cat certificate.crt
 THUMBPRINT=$(openssl x509 -in certificate.crt -fingerprint -noout | sed -E 's/SHA1 Fingerprint=(.*)/\1/g' | sed -E 's/://g')
 echo $THUMBPRINT
 ```
-### (7)-(c) OIDCプロバイダ作成
+### (1)-(d) OIDCプロバイダ作成
 ```shell
 aws iam create-open-id-connect-provider \
     --url "${OpenIdConnectIssuerUrl}" \
@@ -659,13 +664,297 @@ aws iam create-open-id-connect-provider \
 
 ```
 
-## (8) AutoScaling設定
+## (2) Cluster Autoscalerのセットアップ
+Cluster Autoscalerを導入して、kubernetesからAutoScalingを調整してスケールアップ/スケールインをコントローするようにします。
+- 参考情報
+    - [Kubernetes Autoscaler](https://github.com/kubernetes/autoscaler)
+        - [EKSでのセットアップ手順](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md)
+        - [AWS OIDCプロバイダー利用時の説明](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/CA_with_AWS_IAM_OIDC.md)
+
+### (2)-(a) Cluster Autoscaler用にVPCエンドポイントを追加
+Cluster Autoscalerは、ワーカーノードのリソース利用状況に合わせて、EC2 Autoscalingのインスタンス数設定を変更することで、キャパシティーの調整を行います。
+Cluster AutoscalerからEC2 Autoscalingを操作できるようにするために、EC2 AutoscalingのVPCエンドポイントを追加します。
+```shell
+ aws cloudformation create-stack \
+        --stack-name EksPoc-Vpce-Autoscaler \
+        --template-body "file://./src/vpce_for_autoscaler.yaml"
+```
+
+### (2)-(b) AutoscalerのdockerイメージをECRに格納
+本検証環境は、kubernetesのワーカーノードから外部にはアクセスができないため、そのままではCluster Autoscalerのdocerイメージが取得できません。
+そのためECRリポジトリを用意し、Cluster Autoscalerのdocerイメージを格納しておきます。
+#### (i) Autoscalerイメージ保管用ECRリポジトリ作成
+```shell
+aws cloudformation create-stack \
+        --stack-name EksPoc-AutoscalerEcr \
+        --template-body "file://./src/Autoscaler/ecr_for_autoscaler.yaml" 
+```
+
+#### (ii) (Dockerインスタンス)Autoscalerイメージの取得と保管
+以下の作業は、別端末を開いてDockerインスタンスにログインして作業します。
+- Dockerインスタンスへのログイン
+```shell
+export PROFILE=<PoC環境のAdmministratorAccess権限が実行可能なプロファイル>
+export REGION="ap-northeast-1"
+
+#プロファイルの動作テスト
+#COMPUTE_PROFILE
+aws --profile ${PROFILE} sts get-caller-identity
+```
+```shell
+#DockerDevインスタンスのインスタンスID取得
+DockerDevID=$(aws --profile ${PROFILE} --region ${REGION} --output text \
+    cloudformation describe-stacks \
+        --stack-name EksPoc-Instances \
+        --query 'Stacks[].Outputs[?OutputKey==`DockerDevId`].[OutputValue]')
+echo "DockerDevID = $DockerDevID"
+
+#SSMによるOSログイン
+aws --profile ${PROFILE} --region ${REGION} \
+    ssm start-session \
+        --target "${DockerDevID}"
+```
+
+- ec2-userへの変更
+```shell
+sudo -u ec2-user -i
+```
+
+- dockerイメージの情報取得
+下記で表示されるイメージ情報のURI(`k8s.gcr.io/autoscaling/cluster-autoscaler`など)を控えておきます。
+```shell
+curl https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml 2> /dev/null | grep 'image:'
+```
+タグ情報は、ウェブブラウザで、GitHub の [Cluster Autoscaler リリースページ](https://github.com/kubernetes/autoscaler/releases)を開き、最新の (クラスターの Kubernetes のメジャーおよびマイナーバージョンに一致する) Cluster Autoscaler バージョンを見つけます。ととえば、クラスターの Kubernetes バージョンが 1.21 の場合、1.21 で始まる Cluster Autoscaler リリースを見つけます。次のステップで使用するので、そのリリースのセマンティックバージョン番号 (1.21.n) を書き留めておきます。
+
+
+上記のimage情報を変数に入れておきます。
+```shell
+AUTOSCALER_PATH="<上記で控えておいたAutoscalerのイメージのuri:タグ情報>"
+```
+AutoscalerのDockerイメージをローカルにpullします。
+```shell
+docker pull "${AUTOSCALER_PATH}"
+```
+```shell
+#取得した情報の確認
+docker images
+```
+- dockerイメージをECRに格納
+Autoscaler用ECRのURI取得
+```shell
+REPO_URL=$( aws --output text \
+    ecr describe-repositories \
+        --repository-names autoscaler-repo \
+    --query 'repositories[].repositoryUri' ) ;
+echo "
+REPO_URL = ${REPO_URL}
+"
+```
+ECRへのpush
+```shell
+# ECR登録用のタグを作成
+docker tag ${AUTOSCALER_PATH} ${REPO_URL}:latest
+docker images #作成したtagが表示されていることを確認
+
+#ECRログイン
+#"Login Succeeded"と表示されることを確認
+aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URL}
+
+#イメージのpush
+docker push ${REPO_URL}:latest
+
+#ECR上のレポジトリ確認
+aws ecr list-images --repository-name autoscaler-repo
+```
+### (iii)ログアウト
+作業が完了したので、Dockerインスタンスからログアウトします
+```shell
+exit
+exit
+```
+
+以後の作業は、Bastion兼高権限用インスタンスに戻って行います。
+
+### (2)-(c) Cluster Autoscaler用IAMロール追加
+#### (i)IAMロールの信頼関係(Trust relationship)設定用の情報取得
+```shell
+#EKSクラスターのOIDC情報取得
+OIDC_FQDN=$(aws --output text \
+    cloudformation describe-stacks \
+        --stack-name EksPoc-EksControlPlane \
+        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]' | sed -E 's/^.*(http|https):\/\/([^/]+).*/\2/g')
+echo "OIDC_FQDN = ${OIDC_FQDN}"
+
+#該当OIDCプロバイダーのARN取得
+OIDCProviderARN=$(aws --output text iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[].Arn' | grep $OIDC_FQDN)
+echo "OIDCProviderARN = ${OIDCProviderARN}"
+
+#該当OIDCプロバイダーのURI取得
+OIDCProviderURI=$(aws --output text iam get-open-id-connect-provider --open-id-connect-provider-arn ${OIDCProviderARN} --query 'Url')
+echo "OIDCProviderURI = ${OIDCProviderURI}"
+```
+#### (ii)IAMロールの信頼関係用ポリシー生成
+```shell
+sed -e "s;OIDCProviderARN;${OIDCProviderARN};g" \
+    -e "s;OIDCProviderURI;${OIDCProviderURI};g" \
+    src/Autoscaler/cluster_autoscaler_iam_role_trust_policy.json_template > cluster_autoscaler_iam_role_trust_policy.json
+```
+#### (iii)Cluster Autoscaler用のIAMロール作成
+```shell
+#KESクラスター情報取得
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+echo "EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}"
+
+IAM_ROLE_NAME=${EKS_CLUSTER_NAME}-Autoscaler_Role
+```
+```shell
+#IAMロール作成
+aws iam create-role \
+    --role-name "${IAM_ROLE_NAME}" \
+    --assume-role-policy-document "file://cluster_autoscaler_iam_role_trust_policy.json"
+
+#IAMポリシー(インラインポリシー)のアタッチ
+aws iam put-role-policy \
+    --role-name "${IAM_ROLE_NAME}" \
+    --policy-name Autoscaler \
+    --policy-document "file://src/Autoscaler/cluster_autoscaler_iam_policy.json"
+```
+### (2)-(d) ワーカーノードのインスタンスロールへの権限付与
+下記ドキュメントに`Attach the above created policy to the instance role that's attached to your Amazon EKS worker nodes.`とあるので、同じIAMポリシーをワーカーノードのインスタンスロールにも付与します。
+- https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/CA_with_AWS_IAM_OIDC.md
+
+```shell
+#ワーカーノードのインスタンスロールのロール名を取得
+WORKER_ROLE_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-IAM \
+    --query 'Stacks[].Outputs[?OutputKey==`EC2k8sWorkerRoleName`].[OutputValue]' )
+echo "WORKER_ROLE_NAME = ${WORKER_ROLE_NAME}"
+```
+```shell
+#IAMポリシー(インラインポリシー)のアタッチ
+aws iam put-role-policy \
+    --role-name "${WORKER_ROLE_NAME}" \
+    --policy-name Autoscaler \
+    --policy-document "file://src/Autoscaler/cluster_autoscaler_iam_policy.json"
+```
+
+### (2)-(e) Autoscalerの定義サンプル取得と編集
+#### (ii) ロールのARN確認
+```shell
+#ロールのARNをメモ帳などに控えておきます。
+aws --output text iam get-role --role-name "${IAM_ROLE_NAME}" --query 'Role.Arn'
+```
+
+#### (i) AutoscalerのGitHubから定義ファイルを取得
+```shell
+curl -o cluster-autoscaler-autodiscover.yaml https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+```
+
+#### (ii) 定義ファイルの変更
+エディタで開いて定義ファイルを編集します。
+- クラスター名の変更
+    - `<YOUR CLUSTER NAME>`の部分を実際のEKSクラスター名に変更します。
+    - `k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.0`の部分を、(2)-(b)で保管したECRに変更します。URIは(2)-(b)で取得したものでタグは`latest`にします
+        - 変更後のimageパスの例: `999999999999.dkr.ecr.ap-northeast-1.amazonaws.com/autoscaler-repo:latest`
+    - 起動オプションの変更
+        - `--aws-use-static-instance-list=true`を追加。(デフォルトではEC2インスタンスの最新リスト取得のために`api.pricing.us-east-1.amazonaws.com`にアクセスするが、インターネット接続がない環境ではエラーになりAutoscalerが起動失敗するため無効化する)
+```yaml
+      serviceAccountName: cluster-autoscaler
+      containers:
+        - image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.0  <<== 変更する
+          name: cluster-autoscaler
+          resources:
+            limits:
+              cpu: 100m
+              memory: 600Mi
+            requests:
+              cpu: 100m
+              memory: 600Mi
+          command:
+            - ./cluster-autoscaler
+            - --v=4
+            - --stderrthreshold=info
+            - --cloud-provider=aws
+            - --skip-nodes-with-local-storage=false
+            - --expander=least-waste
+            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/<YOUR CLUSTER NAME> <<== 変更する
+            - --aws-use-static-instance-list=true <<==追加する
+```
+- Autoscaler用IAMロールの追加
+    - Autoscalerで利用するOIDC認証を行うIAMロールを定義に追加します
+    - 追加場所と追加方法は、定義ファイル先頭の`metadata`セクションに`annotations`で追加します。
+    - `arn:aws:iam::xxxxx:role/Amazon_CA_role`の部分を、(2)-(b)の(iii)で作成したIAMロールのARNに置き換えます。
+```yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-addon: cluster-autoscaler.addons.k8s.io
+    k8s-app: cluster-autoscaler
+  annotations:   <==行追加
+    eks.amazonaws.com/role-arn: arn:aws:iam::xxxxx:role/Amazon_CA_role   # Add the IAM role created in the above C section.  <==行追加
+  name: cluster-autoscaler
+  namespace: kube-system
+```
+### (2)-(f) Autoscalerの適用
+#### (i) Autoscalerの適用
+```shell
+kubectl apply -f cluster-autoscaler-autodiscover.yaml
+```
+#### (ii) 状態確認
+```shell
+kubectl get deployment/cluster-autoscaler -o wide -n kube-system
+
+
+NAME                 READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS           IMAGES                                                                     SELECTOR
+cluster-autoscaler   1/1     1            1           16s   cluster-autoscaler   616605178605.dkr.ecr.ap-northeast-1.amazonaws.com/autoscaler-repo:latest   app=cluster-autoscaler
+```
+`READY`が`1/1`になり、AVAILABLEが`1`であれば成功です。
+
+- ログを参照する場合は下記コマンドで確認できます。
+```shell
+kubectl -n kube-system logs -f deployment.apps/cluster-autoscaler
+```
+
+
+### (2)-(f) Autoscalerの検証
+`ハンズオン(その1)`の（7）で動作確認で利用したdeploymentを利用して、autoscalingの動作確認を行います。
+
+#### (i)pod数の変更
+`httpd-deployment.yaml`の`replicas:`の数を`2`から`20`に変更します。
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpd-deployment
+  labels:
+    app: httpd-dep
+spec:
+  replicas: 2 <<= ここを2から20に変更する
+  selector:
+    matchLabels:
+      app: httpd-pod
+<以下略>
+```
+#### (ii)適用
+```shell
+kubectl apply -f httpd-deployment.yaml
+```
+#### (iii)確認
+```shell
+# deploymentの状態確認
+kubectl get deployments httpd-deployment
+
+#ワーカーノードの確認
+kubectl get nodes
+```
+また、Autoscalingの`Desired capacity`が変更されているかを確認する。
 
 
 
-
-https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md
-
-https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/CA_with_AWS_IAM_OIDC.md
 
 ## (9) ELB設定

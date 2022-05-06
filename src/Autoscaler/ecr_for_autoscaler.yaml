@@ -6,7 +6,7 @@ Resources:
   EcrRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: "ekspoc-repo"
+      RepositoryName: "autoscaler-repo"
       ImageScanningConfiguration: 
          ScanOnPush: true
       #LifecyclePolicy:
