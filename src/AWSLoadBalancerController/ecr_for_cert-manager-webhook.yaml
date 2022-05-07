@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy ECR Repository
+#----------------------------------------------
+Resources:
+  #------------------ ECR repository
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cert-manager-webhook-repo"
+      ImageScanningConfiguration: 
+         ScanOnPush: true
+      #LifecyclePolicy:
+      RepositoryPolicyText:
+        Version: 2008-10-17
+        Statement:
+          -
+            Sid: GetAuthorizationToken
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - Fn::ImportValue: EksPoc-IAM-EC2DockerRoleArn
+                - Fn::ImportValue: EksPoc-IAM-EC2k8sWorkerRoleArn
+            Action: 
+              - ecr:GetAuthorizationToken
+              - ecr:DescribeRepositories
+          - 
+            Sid: AllowPushPull
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - Fn::ImportValue: EksPoc-IAM-EC2DockerRoleArn
+            Action: 
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+              - ecr:BatchCheckLayerAvailability
+              - ecr:PutImage
+              - ecr:InitiateLayerUpload
+              - ecr:UploadLayerPart
+              - ecr:CompleteLayerUpload
+          -
+            Sid: AllowPullOnly
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - Fn::ImportValue: EksPoc-IAM-EC2k8sWorkerRoleArn
+            Action: 
+              - ecr:BatchCheckLayerAvailability
+              - ecr:GetDownloadUrlForLayer
+      Tags: 
+        -
+          Key: Name
+          Value: PoCEcrRepository
+Outputs:
+  #---------------- EC2 Instance
+  EcrRepositoryId:
+    Description: Ecr Repository ID
+    Value: !Ref EcrRepository
+    Export:
+      Name: !Sub ${AWS::StackName}-EcrRepositoryId
+  EcrRepositoryArn:
+    Description: Ecr Repository Arn
+    Value: !GetAtt EcrRepository.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-EcrRepositoryArn
+  EcrRepositoryUri:
+    Description: Ecr Repository Url
+    Value: !GetAtt EcrRepository.RepositoryUri
+    Export:
+      Name: !Sub ${AWS::StackName}-EcrRepositoryUri
+
+      

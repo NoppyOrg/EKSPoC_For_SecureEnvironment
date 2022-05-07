@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy VPCEndpoints
+#----------------------------------------------
+Resources:
+  ElbEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: EksPoc-VPC-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.elasticloadbalancing"
+      PrivateDnsEnabled: yes
+      SubnetIds:
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+      SecurityGroupIds: 
+        - Fn::ImportValue: EksPoc-SG-VpceSGId
+      PolicyDocument:
+        Statement:
+          - 
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
+            Action: "elasticloadbalancing:*"
+            Resource: "*"

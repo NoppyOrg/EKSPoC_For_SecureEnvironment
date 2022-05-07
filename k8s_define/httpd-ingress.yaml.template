@@ -1,0 +1,62 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpd-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: httpd-pod
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: httpd-pod
+    spec:
+      containers:
+      - name: httpd
+        image: REPO_URL:latest
+        ports:
+          - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpd-service
+  labels:
+    app: httpd-service
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: httpd-pod
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: httpd-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: httpd-service
+                port:
+                  number: 80

@@ -107,3 +107,8 @@ venv.bak/
 cluster_autoscaler_iam_role_trust_policy.json
 httpd-deployment.yaml
 cluster-autoscaler-autodiscover.yaml
+iam_policy.json
+aws-load-balancer-controller_iam_role_trust_policy.json
+aws-load-balancer-controller-service-account.yaml
+cert-manager.yaml
+httpd-ingress.yaml
