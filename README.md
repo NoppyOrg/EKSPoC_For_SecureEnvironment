@@ -1,7 +1,18 @@
-# CloudFormation: EKS PoC For Secure Environment
-セキュアな環境でEKSを利用するための検証用環境を作成するCloudFormationテンプレートです。
+# EKS Fully-Private Cluster without kesctl
+インターネット接続のないVPC(VPC閉塞環境、プロキシ接続もなし)環境で、EKSクラスターを利用するためのセットアップの手順(ハンズオン)です。
+
+eksctlコマンドを利用すれば比較的容易にEKSのプライベートクラスターが構築可能ですが([EKS Fully-Private Cluster](https://eksctl.io/usage/eks-private-cluster/)参照)、EKSクラスターが、どのようなAWSサービスを活用しているのか、どのようなIAM権限や、通信経路が必要になるのかを学習することも目的としているため、スクラッチで順を追って構築する手順にしています。
+
 # 作成環境
 ![Overall Architecture](./Documents/overall_architecture.svg)
+
+このハンズオンで、以下の環境を構築できます。
++ シンプルなEKSプライベートクラスター(ワーカーノードは、EC2タイプ)を用意し、シンプルなhttpdのpodを稼働させる
++ Autoscalerを導入し、ワーカーノードをスケールイン/アウトさせる。
++ AWS Load Balancer Controllerを導入し、ELBによるロードバランシングを実装する
+
+EKSの構築の手順が複雑なため、手順の多くはCloudFormation化していますが、一部CLIで設定する箇所もあります。
+またGUI(マネージメントコンソール)はUIが頻繁に変わるため、CloudFormationのスタック作成も含め全てAWS CLI(LinuxやMacのシェル環境を前提)での実行を前提としています。
 
 # ハンズオン(その１): シンプルなEKSプライベートクラスター作成
 シンプルなEKSプライベートクラスターを作成し、動作テストでpodを動かします。
@@ -54,7 +65,7 @@ aws --profile ${PROFILE} --region ${REGION} \
         --template-body "file://./src/vpce_simple.yaml" 
 ```
 
-## (3)IAMロール&KMSキー作製
+## (3)IAMロール&KMSキー作成
 ### (3)-(a) IAMロール作成
 必要なIAMロールを準備します。
 - AWS管理ポリシーを付与する場合おはこのタイミングで付与します。
