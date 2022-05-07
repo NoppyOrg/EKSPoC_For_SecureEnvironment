@@ -966,11 +966,575 @@ kubectl get nodes
 ```
 また、Autoscalingの`Desired capacity`が変更されているかを確認する。
 
-
-## (9) ELB設定
-AWS Load Balancer Controllerを利用した構成。
-
+# ハンズオン(その3): AWS Load Balancer ControllerによるELB構成
+![Add AWS Load Balancer Controller](./Documents/arch-add_elb.svg)
 - 参考情報
     - [EKSユーザーガイド: AWS Load Balancer Controller アドオンのインストール](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/aws-load-balancer-controller.html)
 
-以下、別途記載
+## (1) PrivateクラスターのためのVPCE作成とECRイメージの格納
+### (1)-(a) AWS Load Balancer Controller用にVPCエンドポイントを追加
+AWS Load Balancer Controllerから、ELBを操作できるようにするために、Elastic LoadbalancerのVPCエンドポイントを追加します。
+```shell
+ aws cloudformation create-stack \
+        --stack-name EksPoc-Vpce-AwsLoadBalancerController \
+        --template-body "file://./src/vpce_for_aws-load-balancer-controller.yaml"
+```
+
+### (1)-(b) AWS Load Balancer ControllerとCert-ManagerのDockerイメージの保管
+本検証環境はkubernetesのワーカーノードから外部にはアクセスができないため、ECRリポジトリを用意しAWS Load Balancer Controllerのdocerイメージを格納しておきます。
+#### (i) ECRリポジトリ作成
+- AWS Load Balancer Controller
+```shell
+aws cloudformation create-stack \
+        --stack-name EksPoc-AwsLoadBalancerControllerEcr \
+        --template-body "file://./src/AWSLoadBalancerController/ecr_for_aws-load-balancer-controller.yaml"
+```
+- CERT-Manager
+```shell
+aws cloudformation create-stack \
+        --stack-name EksPoc-CertManagerControllerEcr \
+        --template-body "file://./src/AWSLoadBalancerController/ecr_for_cert-manager-controller.yaml"
+```
+```shell
+aws cloudformation create-stack \
+        --stack-name EksPoc-CertManagerCainjectorEcr \
+        --template-body "file://./src/AWSLoadBalancerController/ecr_for_cert-manager-cainjector.yaml"
+```
+```shell
+aws cloudformation create-stack \
+        --stack-name EksPoc-CertManagerWebhookEcr \
+        --template-body "file://./src/AWSLoadBalancerController/ecr_for_cert-manager-webhook.yaml"
+```
+
+#### (ii) AWS Load Balancer Controllerの最新バージョンを確認
+下記AWS Load Balancer ControllerのGitHubのリリース情報から、最新バージョンを確認する。
+https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases
+
+最新バージョンを確認したら下記情報を控えておく
+- バージョン名: 例えば`v.2.4.1`など
+- Assetsの定義ファイルのURI: Assetsのリストでファイル名が`v2_4_1_full.yaml`などとあるYAML定義のURLを控える
+- DockerイメージのURI: リリース情報の冒頭に`Image: docker.io/amazon/aws-alb-ingress-controller:v2.4.1`という形で表示されているのでそこから取得するか、上記のYAML定義の中から情報を取得する。
+
+#### (iii) (Dockerインスタンス)AWS Load Balancer Controllerイメージの取得と保管
+
+以下の作業は、別端末を開いてDockerインスタンスにログインして作業します。
+- Dockerインスタンスへのログイン
+```shell
+export PROFILE=<PoC環境のAdmministratorAccess権限が実行可能なプロファイル>
+export REGION="ap-northeast-1"
+
+#プロファイルの動作テスト
+#COMPUTE_PROFILE
+aws --profile ${PROFILE} sts get-caller-identity
+```
+```shell
+#DockerDevインスタンスのインスタンスID取得
+DockerDevID=$(aws --profile ${PROFILE} --region ${REGION} --output text \
+    cloudformation describe-stacks \
+        --stack-name EksPoc-Instances \
+        --query 'Stacks[].Outputs[?OutputKey==`DockerDevId`].[OutputValue]')
+echo "DockerDevID = $DockerDevID"
+
+#SSMによるOSログイン
+aws --profile ${PROFILE} --region ${REGION} \
+    ssm start-session \
+        --target "${DockerDevID}"
+```
+
+- ec2-userへの変更
+```shell
+sudo -u ec2-user -i
+```
+
+- DockerイメージのPull
+```shell
+AWSLBCTL_PATH="<(ii)で控えておいたAWS Load Balancer Controllerのイメージのuri:タグ情報>"
+```
+AWS Load Balancer ControllerのDockerイメージをローカルにpullします。
+```shell
+docker pull "${AWSLBCTL_PATH}"
+```
+```shell
+#取得した情報の確認
+docker images
+```
+- dockerイメージをECRに格納
+AWS Load Balancer Controller用ECRのURI取得
+```shell
+REPO_URL=$( aws --output text \
+    ecr describe-repositories \
+        --repository-names aws-load-balancer-controller-repo \
+    --query 'repositories[].repositoryUri' ) ;
+echo "
+REPO_URL = ${REPO_URL}
+"
+```
+ECRへのpush
+```shell
+# ECR登録用のタグを作成
+docker tag ${AWSLBCTL_PATH} ${REPO_URL}:latest
+docker images #作成したtagが表示されていることを確認
+
+#ECRログイン
+#"Login Succeeded"と表示されることを確認
+aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URL}
+
+#イメージのpush
+docker push ${REPO_URL}:latest
+
+#ECR上のレポジトリ確認
+aws ecr list-images --repository-name autoscaler-repo
+```
+
+#### (iv) (Dockerインスタンス)CertManagerイメージの取得と保管
+同様にCertManagerのイメージをECRに保管します。最新情報は以下のデプロイ手順のCERT-Managerの`ノードが quay.io コンテナレジストリにアクセスできない場合`の説明を参照下さい。
+- https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/aws-load-balancer-controller.html
+
+
+- マニフェストのダウンロード
+```shell
+curl -Lo cert-manager.yaml https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
+```
+
+- イメージURIの取得
+```shell
+grep -e 'image:' cert-manager.yaml
+
+          image: "quay.io/jetstack/cert-manager-cainjector:v1.5.4"
+          image: "quay.io/jetstack/cert-manager-controller:v1.5.4"
+          image: "quay.io/jetstack/cert-manager-webhook:v1.5.4"
+```
+手動で以下を設定します
+```shell
+CERT_MGR_CAIN="<cert-manager-cainjectorのパスを設定>"
+CERT_MGR_CONT="<cert-manager-controllerのパスを設定>"
+CERT_MGR_WEBH="<quay.io/jetstack/cert-manager-webhook:のパスを設定>"
+```
+
+- ECRレポジトリのURI取得
+```shell
+CERT_MGR_CAIN_REPO_URL=$( aws --output text \
+    ecr describe-repositories \
+        --repository-names cert-manager-cainjector-repo \
+    --query 'repositories[].repositoryUri' ) ;
+CERT_MGR_CONT_REPO_URL=$( aws --output text \
+    ecr describe-repositories \
+        --repository-names cert-manager-controller-repo \
+    --query 'repositories[].repositoryUri' ) ;
+CERT_MGR_WEBH_REPO_URL=$( aws --output text \
+    ecr describe-repositories \
+        --repository-names cert-manager-webhook-repo \
+    --query 'repositories[].repositoryUri' ) ;
+
+echo "
+CERT_MGR_CAIN_REPO_URL = ${CERT_MGR_CAIN_REPO_URL}
+CERT_MGR_CONT_REPO_URL = ${CERT_MGR_CONT_REPO_URL}
+CERT_MGR_WEBH_REPO_URL = ${CERT_MGR_WEBH_REPO_URL}
+"
+```
+- イメージPull
+```shell
+docker pull "${CERT_MGR_CAIN}"
+docker pull "${CERT_MGR_CONT}"
+docker pull "${CERT_MGR_WEBH}"
+```
+確認します。
+```shell
+docker images
+```
+- ECRへのPush(cert-manager-cainjector)
+```shell
+docker tag ${CERT_MGR_CAIN} ${CERT_MGR_CAIN_REPO_URL}:latest
+aws ecr get-login-password | docker login --username AWS --password-stdin ${CERT_MGR_CAIN_REPO_URL}
+docker push ${CERT_MGR_CAIN_REPO_URL}:latest
+aws ecr list-images --repository-name cert-manager-cainjector-repo
+```
+
+- ECRへのPush(cert-manager-controller)
+```shell
+docker tag ${CERT_MGR_CONT} ${CERT_MGR_CONT_REPO_URL}:latest
+aws ecr get-login-password | docker login --username AWS --password-stdin ${CERT_MGR_CONT_REPO_URL}
+docker push ${CERT_MGR_CONT_REPO_URL}:latest
+aws ecr list-images --repository-name cert-manager-controller-repo 
+```
+
+- ECRへのPush(cert-manager-webhook)
+```shell
+docker tag ${CERT_MGR_WEBH} ${CERT_MGR_WEBH_REPO_URL}:latest
+aws ecr get-login-password | docker login --username AWS --password-stdin ${CERT_MGR_WEBH_REPO_URL}
+docker push ${CERT_MGR_WEBH_REPO_URL}:latest
+aws ecr list-images --repository-name cert-manager-webhook-repo
+```
+
+### (v)ログアウト
+作業が完了したので、Dockerインスタンスからログアウトします
+```shell
+exit
+exit
+```
+
+## (2) AWS Load Balancer Controller用のIAMロール作成
+以後の作業は、Bastion兼高権限用インスタンスに戻って行います。
+
+### (2)-(a) IAMポリシー取得
+```shell
+curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.0/docs/install/iam_policy.json
+```
+
+### (2)-(b) IAMロールの信頼関係(Trust relationship)設定用の情報取得
+```shell
+#EKSクラスターのOIDC情報取得
+OIDC_FQDN=$(aws --output text \
+    cloudformation describe-stacks \
+        --stack-name EksPoc-EksControlPlane \
+        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]' | sed -E 's/^.*(http|https):\/\/([^/]+).*/\2/g')
+echo "OIDC_FQDN = ${OIDC_FQDN}"
+
+#該当OIDCプロバイダーのARN取得
+OIDCProviderARN=$(aws --output text iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[].Arn' | grep $OIDC_FQDN)
+echo "OIDCProviderARN = ${OIDCProviderARN}"
+
+#該当OIDCプロバイダーのURI取得
+OIDCProviderURI=$(aws --output text iam get-open-id-connect-provider --open-id-connect-provider-arn ${OIDCProviderARN} --query 'Url')
+echo "OIDCProviderURI = ${OIDCProviderURI}"
+```
+### (2)-(c) IAMロールの信頼関係用ポリシー生成
+```shell
+sed -e "s;OIDCProviderARN;${OIDCProviderARN};g" \
+    -e "s;OIDCProviderURI;${OIDCProviderURI};g" \
+    src/AWSLoadBalancerController/aws-load-balancer-controller_iam_role_trust_policy.json_template > aws-load-balancer-controller_iam_role_trust_policy.json
+```
+生成した信頼関係用ポリシーの確認をします。
+```shell
+cat aws-load-balancer-controller_iam_role_trust_policy.json
+```
+
+### (2)-(d) IAMロールの作成
+IAMロール名を設定します。
+```shell
+#KESクラスター情報取得
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+echo "EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}"
+
+LB_CTL_IAM_ROLE_NAME=${EKS_CLUSTER_NAME}-AWS-Loadbalancer-Controler-Role
+```
+IAMロールを作成します。
+```shell
+#IAMロール作成
+aws iam create-role \
+    --role-name "${LB_CTL_IAM_ROLE_NAME}" \
+    --assume-role-policy-document "file://aws-load-balancer-controller_iam_role_trust_policy.json"
+
+#IAMポリシー(インラインポリシー)のアタッチ
+aws iam put-role-policy \
+    --role-name "${LB_CTL_IAM_ROLE_NAME}" \
+    --policy-name loadbalancer \
+    --policy-document "file://iam_policy.json"
+```
+
+### (2)-(e)  AWS Load Balancer Controller用のIAMロールをk8sにサービスアカウントとして登録
+#### (i) 作成したIAMロールのARN取得
+```shell
+AWS_LOAD_BALANCER_CONTROLLER_IAM_ROLL_ARN=$(aws --output text \
+    iam get-role --role-name "${LB_CTL_IAM_ROLE_NAME}" --query 'Role.Arn')
+
+echo "
+AWS_LOAD_BALANCER_CONTROLLER_IAM_ROLL_ARN = ${AWS_LOAD_BALANCER_CONTROLLER_IAM_ROLL_ARN}
+"
+```
+#### (ii) k8sのサービスアカウント定義ファイルの作成
+テンプレートにIAMロールのARNを設定します。
+```shell
+sed -e "s;AmazonEKSLoadBalancerControllerRoleARN;${AWS_LOAD_BALANCER_CONTROLLER_IAM_ROLL_ARN};g" \
+    src/AWSLoadBalancerController/aws-load-balancer-controller-service-account.yaml_template > aws-load-balancer-controller-service-account.yaml
+
+#確認します
+cat aws-load-balancer-controller-service-account.yaml
+
+```
+#### (iii) k8sのクラスターへの登録
+```shell
+kubectl apply -f aws-load-balancer-controller-service-account.yaml
+```
+下記コマンドで登録されていることを確認します。
+```shell
+kubectl -n kube-system get serviceaccount aws-load-balancer-controller
+
+NAME                           SECRETS   AGE
+aws-load-balancer-controller   1         74s
+```
+## (3)CERT-Managerのインストール
+### (i)マニフェストの取得
+```shell
+curl -Lo cert-manager.yaml https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
+```
+
+### (ii)マニフェストの編集
+ダウンロードしたマニフェストのDockerイメージのURI(下記部分)をECRに格納したイメージのURIへ書き換えます。
+```yaml
+    image: "quay.io/jetstack/cert-manager-cainjector:v1.5.4"
+    image: "quay.io/jetstack/cert-manager-controller:v1.5.4"
+    image: "quay.io/jetstack/cert-manager-webhook:v1.5.4"
+```
+- ECRレポジトリのURI取得
+取得したURIをメモ帳などに控えておきます。
+```shell
+CERT_MGR_CAIN_REPO_URL=$(aws --output text cloudformation describe-stacks \
+        --stack-name EksPoc-CertManagerCainjectorEcr \
+        --query 'Stacks[].Outputs[?OutputKey==`EcrRepositoryUri`].[OutputValue]')
+CERT_MGR_CONT_REPO_URL=$(aws --output text cloudformation describe-stacks \
+        --stack-name EksPoc-CertManagerControllerEcr \
+        --query 'Stacks[].Outputs[?OutputKey==`EcrRepositoryUri`].[OutputValue]')
+CERT_MGR_WEBH_REPO_URL=$(aws --output text cloudformation describe-stacks \
+        --stack-name EksPoc-CertManagerWebhookEcr \
+        --query 'Stacks[].Outputs[?OutputKey==`EcrRepositoryUri`].[OutputValue]')
+
+echo "
+CERT_MGR_CAIN_REPO_URL = ${CERT_MGR_CAIN_REPO_URL}
+CERT_MGR_CONT_REPO_URL = ${CERT_MGR_CONT_REPO_URL}
+CERT_MGR_WEBH_REPO_URL = ${CERT_MGR_WEBH_REPO_URL}
+"
+```
+
+- マニフェストの編集
+Dockerイメージを指定している3箇所(`image: "quay.io/jetstack/cert-manager-xxxxxx`部分)をECRに格納したイメージの`URI:latest`に変更する。
+```shell
+ vi cert-manager.yaml
+```
+編集後の`image:`部分の例。
+```yaml
+    image: "999999999999.dkr.ecr.ap-northeast-1.amazonaws.com/cert-manager-cainjector-repo:latest"
+    image: "999999999999.dkr.ecr.ap-northeast-1.amazonaws.com/cert-manager-controller-repo:latest"
+    image: "999999999999.dkr.ecr.ap-northeast-1.amazonaws.com/cert-manager-webhook-repo:latest"
+```
+
+### (iii)マニフェストの適用
+```shell
+kubectl apply \
+    --validate=false \
+    -f ./cert-manager.yaml
+
+```
+状態を確認します。READYが`1/1`ならpodが正常に起動しておりOKです。
+```shell
+kubectl -n cert-manager get deployments
+
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+cert-manager              1/1     1            1           55s
+cert-manager-cainjector   1/1     1            1           55s
+cert-manager-webhook      1/1     1            1           55s
+```
+
+## (4) AWS Load Balancer Controllerのインストール
+### (4)-(a) Controllerのマニフェスト取得
+(1)-(b)で確認したAWS Load Balancer ControllerバージョンのYAML定義ファイルを取得します。
+```shell
+# v2_4_0_full.yamlの場合
+curl -Lo v2_4_0_full.yaml https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.4.0/v2_4_0_full.yaml
+```
+### Controllerのマニフェストの編集
+
+
+- Cluster
+- image変更
+- arg変更
+
+#### (i)情報の取得
+取得したクラスター名とLoadBalancerのECRのURIを控えておきます。
+```shell
+#KESクラスター情報取得
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+
+LBCTL_REPO_URL=$(aws --output text cloudformation describe-stacks \
+        --stack-name EksPoc-AwsLoadBalancerControllerEcr \
+        --query 'Stacks[].Outputs[?OutputKey==`EcrRepositoryUri`].[OutputValue]')
+
+VPCID=$(aws --output text cloudformation describe-stacks \
+        --stack-name EksPoc-VPC \
+        --query 'Stacks[].Outputs[?OutputKey==`VpcId`].[OutputValue]')
+
+REGION=$(aws configure get region)
+
+echo "
+EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}
+LBCTL_REPO_URL   = ${LBCTL_REPO_URL}
+VPCID            = ${VPCID}
+REGION           = ${REGION}
+"
+```
+### (ii)マニフェストの編集
+取得したマニフェストの以下の部分を修正します
+- 必須項目
+    - クラスター名変更: `--cluster-name=your-cluster-name`の`your-cluster-name`を変更します
+- EC2インスタンスのIMDSへのアクセスが制限されているまたはFargate利用時
+    - 引数にVPC ID追加: `--aws-vpc-id=vpc-xxx`
+    - リージョン追加: `--aws-region=region-code`
+- Privateクラスター固有の追加(NATGW等によるインターネット接続不可時)
+    - shield/waf無効化の追加: `--enable-shield=false`,`--enable-waf=false`,`--enable-wafv2=false`
+    - Dockeイメージパス変更: `image:`をECRにPUSHしたイメージに変更
+
+以下に変更例を示します。
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: aws-load-balancer-controller
+  name: aws-load-balancer-controller
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/name: aws-load-balancer-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/name: aws-load-balancer-controller
+    spec:
+      containers:
+      - args:
+        - --cluster-name=your-cluster-name #<<== クラスター名を変更
+        - --ingress-class=alb
+        - --aws-vpc-id=vpc-xxxxxxxx        #<== 取得したVPC IDを入れて追加
+        - --aws-region=region-code         #<== 取得したリージョンコードを入れて追加
+        - --enable-shield=false            #<== 追加
+        - --enable-waf=false               #<== 追加
+        - --enable-wafv2=false             #<== 追加
+        image: amazon/aws-alb-ingress-controller:v2.4.0 #<<== ECRのイメージのパス "ECRURI:latest"に変更する
+        livenessProbe:
+          failureThreshold: 2
+```
+
+また以下の部分を削除します。(前のステップで追加された IAM ロールを持つアノテーションが、コントローラーがデプロイされる際に上書きされるのを防ぐため)
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: aws-load-balancer-controller
+  name: aws-load-balancer-controller
+  namespace: kube-system
+---
+```
+
+
+### (iii)マニフェストの適用
+```shell
+#マニフェストの適用
+#kubectl apply -f ファイル名
+#以下はv2_4_0_full.yamlファイルの場合
+kubectl apply -f v2_4_0_full.yaml
+```
+状態を確認します。
+```shell
+kubectl get deployment -n kube-system aws-load-balancer-controller
+
+
+NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
+aws-load-balancer-controller   1/1     1            1           3m11s
+```
+
+## (5) サブネットを検知できるようにする
+ALBを配置するPublic SubnetをAWS Load Balancer Controllerが検知できるようにするため、Public Subnetに以下のタグを追加します。
+- 追加するタグ
+    - key: `kubernetes.io/role/elb`
+    - value: `1`
+
+### (5)-(a)情報の取得
+```shell
+PUBSUB1ID=$(aws --output text cloudformation describe-stacks \
+        --stack-name EksPoc-VPC \
+        --query 'Stacks[].Outputs[?OutputKey==`PublicSubnet1Id`].[OutputValue]')
+
+PUBSUB2ID=$(aws --output text cloudformation describe-stacks \
+        --stack-name EksPoc-VPC \
+        --query 'Stacks[].Outputs[?OutputKey==`PublicSubnet2Id`].[OutputValue]')
+
+echo "
+PUBSUB1ID = ${PUBSUB1ID}
+PUBSUB2ID = ${PUBSUB2ID}
+"
+```
+### (5)-(b)タグの追加
+```shell
+aws ec2 create-tags --resources ${PUBSUB1ID} ${PUBSUB2ID} --tags 'Key=kubernetes.io/role/elb,Value=1'
+```
+
+## (6)テスト
+以下のようにIngress(ALB)、NodePortのサービス、とhttpdのPodで構成するサンプルを稼働させます。
+![ingress arch](Documents/arch-pod_ingress_arch.svg)
+
+
+
+### (6)-(a) 既存サービスの削除
+ハンズオン(その2)までの定義がある場合はまず削除します。
+```shell
+kubectl delete -f k8s_define/httpd-service.yaml
+kubectl delete -f httpd-deployment.yaml
+```
+
+### (6)-(b) 定義ファイルの生成
+#### (i)リポジトリ情報の取得
+```shell
+REPO_URL=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-Ecr \
+    --query 'Stacks[].Outputs[?OutputKey==`EcrRepositoryUri`].[OutputValue]' )
+echo "
+REPO_URL = ${REPO_URL}
+"
+```
+
+#### (i) 定義ファイルの準備
+```shell
+#Deployment定義ファイルの作成
+#環境固有となるECRレポジトリURL情報をDeploymentに設定します。
+sed -e "s;REPO_URL;${REPO_URL};" k8s_define/httpd-ingress.yaml.template > httpd-ingress.yaml
+cat httpd-ingress.yaml
+```
+
+### (6)-(c) DeploymentとServiceの適用
+#### (i) 適用
+```shell
+kubectl apply -f httpd-ingress.yaml
+```
+
+状態を確認します。
+```shell
+kubectl get cm,deployment,pod,svc -o wide
+
+
+NAME                         DATA   AGE
+configmap/kube-root-ca.crt   1      2d3h
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                                                 SELECTOR
+deployment.apps/httpd-deployment   2/2     2            2           10m   httpd        616605178605.dkr.ecr.ap-northeast-1.amazonaws.com/ekspoc-repo:latest   app.kubernetes.io/name=httpd-pod
+
+NAME                                   READY   STATUS    RESTARTS   AGE   IP             NODE                                              NOMINATED NODE   READINESS GATES
+pod/httpd-deployment-ff96f4749-7fgcl   1/1     Running   0          10m   10.1.154.230   ip-10-1-147-224.ap-northeast-1.compute.internal   <none>           <none>
+pod/httpd-deployment-ff96f4749-m5b6r   1/1     Running   0          10m   10.1.46.57     ip-10-1-60-36.ap-northeast-1.compute.internal     <none>           <none>
+
+NAME                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE    SELECTOR
+service/httpd-service   NodePort    172.20.192.129   <none>        80:32679/TCP   10m    app.kubernetes.io/name=httpd-pod
+service/kubernetes      ClusterIP   172.20.0.1       <none>        443/TCP        2d3h   <none>
+```
+#### (ii) 確認
+マネージメントコンソールなどで、ALBのURLを確認し、ブラウザやcurlコマンドで`http://ALBのDNS`でアクセス可能か確認します。
+
+接続できない場合は以下で原因を特定します。
+- AWS Load Balancer Controllerを調査する
+```shell
+kubectl logs -n kube-system deployment.apps/aws-load-balancer-controller
+```
+
+- k8sのDeployment/service/ingressの調査方法
+こちらを参考にします
+https://aws.amazon.com/jp/premiumsupport/knowledge-center/eks-resolve-failed-health-check-alb-nlb/
