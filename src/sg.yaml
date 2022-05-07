@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Deploy SecurityGroups
 #----------------------------------------------
+Parameters:
+  ClusterName:
+    Type: String
+    Default: EksPoC-PrivateCluster
+#----------------------------------------------
 Resources:
   #------------------ Security Groups for public instances
   BastionSG:
@@ -43,6 +48,8 @@ Resources:
       Tags:
         - Key: Name
           Value: EksPoc-EksWorkerSG
+        - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
+          Value: owned
   AllowAllTrafilcItself:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -76,6 +83,8 @@ Resources:
       Tags:
         - Key: Name
           Value: EksPoc-EksCtlPlaneSG
+        - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
+          Value: owned
   AllowAllTraficFromWorkerNodeEksCtlPlaneSG:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -125,6 +134,14 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: !Ref DockerSG
+  AllowHttpsToBastionSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VpceSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref BastionSG
 Outputs:
   #------------------ Security Group
   BastionSGId:
