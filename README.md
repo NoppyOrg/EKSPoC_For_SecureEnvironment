@@ -211,7 +211,8 @@ REPO_URL=$( aws --output text \
 echo "
 REPO_URL = ${REPO_URL}
 "
-
+```
+```shell
 # ECR登録用のタグを作成
 docker tag httpd-sample:ver01 ${REPO_URL}:latest
 docker images #作成したtagが表示されていることを確認
@@ -306,6 +307,13 @@ aws cloudformation create-stack \
 #### (ii)高権限環境のkubectlをコントロールプレーンに接続
 kubectlからクラスターが参照できるように設定を行います。
 ```shell
+#KESクラスター情報取得
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+echo "EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}"
+```
+```shell
 # kubectl用のconfig取得
 aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME}
 
@@ -327,14 +335,14 @@ kubectl describe configmap -n kube-system aws-auth
 ```shell
 curl -o aws-auth-cm.yaml https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2020-10-29/aws-auth-cm.yaml
 ```
-CloudFormationからWorkerNodeのインスタンスロールARNを取得
+CloudFormationからWorkerNodeインスタンス用のIAMロールのARNを取得します。
 ```shell
 aws --output text cloudformation describe-stacks \
     --stack-name EksPoc-IAM \
     --query 'Stacks[].Outputs[?OutputKey==`EC2k8sWorkerRoleArn`].[OutputValue]'
 ```
 aws-auth-cm.yaml編集 
-`<ARN of instance role (not instance profile)>`をWorkerNodeのインスタンスロールARNに修正
+`<ARN of instance role (not instance profile)>`をWorkerNodeのインスタンスロールARNに修正します。
 ```shell
 vi aws-auth-cm.yaml
 
@@ -536,17 +544,16 @@ kubectl apply -f k8s_define/httpd-service.yaml
 ```shell
 kubectl get deployments -o wide httpd-deployment
 
-NAME               READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES                                                                 SELECTOR
-httpd-deployment   3/3     3            3           9m13s   httpd        616605178605.dkr.ecr.ap-northeast-1.amazonaws.com/ekspoc-repo:latest   app=httpd-pod
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                                                 SELECTOR
+httpd-deployment   0/2     2            0           9s    httpd        141247782993.dkr.ecr.ap-northeast-1.amazonaws.com/ekspoc-repo:latest   app=httpd-pod
 ```
 - Podの状態確認
 ```shell
 kubectl get pods -o wide 
 
 NAME                               READY   STATUS    RESTARTS   AGE     IP            NODE                                             NOMINATED NODE   READINESS GATES
-httpd-deployment-dbb8b7f8c-nbkg2   1/1     Running   0          9m55s   10.1.43.41    ip-10-1-56-7.ap-northeast-1.compute.internal     <none>           <none>
-httpd-deployment-dbb8b7f8c-vzpjj   1/1     Running   0          9m55s   10.1.34.253   ip-10-1-33-162.ap-northeast-1.compute.internal   <none>           <none>
-httpd-deployment-dbb8b7f8c-xk7gw   1/1     Running   0          9m55s   10.1.47.88    ip-10-1-33-162.ap-northeast-1.compute.internal   <none>           <none>
+httpd-deployment-65f68b9dfc-2bx8n   1/1     Running   0          29s   10.1.39.243    ip-10-1-42-54.ap-northeast-1.compute.internal     <none>           <none>
+httpd-deployment-65f68b9dfc-9svlr   1/1     Running   0          29s   10.1.154.189   ip-10-1-147-247.ap-northeast-1.compute.internal   <none>           <none>
 ```
 - Service状態確認
 ```shell
