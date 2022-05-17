@@ -1,4 +1,4 @@
-# EKS Fully-Private Cluster without kesctl
+# EKS Fully-Private Cluster without eksctl
 インターネット接続のないVPC(VPC閉塞環境、プロキシ接続もなし)環境で、EKSクラスターを利用するためのセットアップの手順(ハンズオン)です。
 
 eksctlコマンドを利用すれば比較的容易にEKSのプライベートクラスターが構築可能ですが([EKS Fully-Private Cluster](https://eksctl.io/usage/eks-private-cluster/)参照)、EKSクラスターが、どのようなAWSサービスを活用しているのか、どのようなIAM権限や、通信経路が必要になるのかを学習することも目的としているため、スクラッチで順を追って構築する手順にしています。
