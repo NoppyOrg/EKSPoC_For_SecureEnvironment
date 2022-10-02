@@ -14,13 +14,13 @@ Resources:
       SubnetIds:
         - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
         - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
-      SecurityGroupIds: 
+      SecurityGroupIds:
         - Fn::ImportValue: EksPoc-SG-VpceSGId
       PolicyDocument:
         Statement:
-          - 
+          -
             Effect: Allow
-            Principal: "*" 
+            Principal: "*"
             Action:
               - "ecr:*"
             Resource:
@@ -44,21 +44,21 @@ Resources:
       SubnetIds:
         - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
         - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
-      SecurityGroupIds: 
+      SecurityGroupIds:
         - Fn::ImportValue: EksPoc-SG-VpceSGId
       PolicyDocument:
         Statement:
-          - 
+          -
             Effect: Allow
             Principal:
               AWS:
-                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
             Action:
               - "ecr:GetAuthorizationToken"
             Resource: "*"
-          - 
+          -
             Effect: Allow
-            Principal: "*" 
+            Principal: "*"
             NotAction:
               - "ecr:GetAuthorizationToken"
             Resource:
@@ -99,14 +99,14 @@ Resources:
       SubnetIds:
         - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
         - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
-      SecurityGroupIds: 
+      SecurityGroupIds:
         - Fn::ImportValue: EksPoc-SG-VpceSGId
       PolicyDocument:
         Statement:
-          - 
+          -
             Effect: Allow
             Principal:
               AWS:
-                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" 
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
             Action: "ec2:*"
             Resource: "*"

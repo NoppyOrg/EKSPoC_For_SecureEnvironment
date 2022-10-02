@@ -8,15 +8,15 @@ Parameters:
     Default: NodeGroup
   ClusterName:
     Type: String
-  B64ClusterCa:
-    Type: String
-  ApiServerUrl:
-    Type: String
+  # B64ClusterCa:
+  #   Type: String
+  # ApiServerUrl:
+  #   Type: String
   KeyName:
     Type: String
     Default: ""
 #----------------------------------------------
-Conditions: 
+Conditions:
   CheckKeyPair: !Not [!Equals [!Ref KeyName, "" ]]
 #----------------------------------------------
 Resources:
@@ -41,57 +41,56 @@ Resources:
             - !Ref AWS::NoValue
         SecurityGroupIds:
         - Fn::ImportValue: EksPoc-SG-EksWorkerSGId
-        TagSpecifications: 
+        TagSpecifications:
         - ResourceType: "instance"
-          Tags: 
+          Tags:
           - Key: "Name"
             Value: !Sub "${ClusterName}-${NodeGroupName}"
         - ResourceType: "volume"
-          Tags: 
+          Tags:
           - Key: "Name"
             Value: !Sub "${ClusterName}-${NodeGroupName}"
         - ResourceType: "network-interface"
-          Tags: 
+          Tags:
           - Key: "Name"
             Value: !Sub "${ClusterName}-${NodeGroupName}"
-        UserData:
-          Fn::Base64:
-            !Sub |
-              MIME-Version: 1.0
-              Content-Type: multipart/mixed; boundary="==MYBOUNDARY=="
+        # UserData:
+        #   Fn::Base64:
+        #     !Sub |
+        #       MIME-Version: 1.0
+        #       Content-Type: multipart/mixed; boundary="==MYBOUNDARY=="
 
-              --==MYBOUNDARY==
-              Content-Type: text/x-shellscript; charset="us-ascii"
+        #       --==MYBOUNDARY==
+        #       Content-Type: text/x-shellscript; charset="us-ascii"
 
-              #!/bin/bash
+        #       #!/bin/bash
 
-              # Setup an instance into an EKS cluster
-              set -o xtrace
-              /etc/eks/bootstrap.sh \
-                --b64-cluster-ca '${B64ClusterCa}' \
-                --apiserver-endpoint '${ApiServerUrl}' \
-                '${ClusterName}'
+        #       # Setup an instance into an EKS cluster
+        #       set -o xtrace
+        #       /etc/eks/bootstrap.sh \
+        #         --b64-cluster-ca '${B64ClusterCa}' \
+        #         --apiserver-endpoint '${ApiServerUrl}' \
+        #         '${ClusterName}'
 
-              --==MYBOUNDARY==--
-
-  ManagedNodeGroup: 
+        #       --==MYBOUNDARY==--
+  ManagedNodeGroup:
     Type: AWS::EKS::Nodegroup
     Properties:
       NodegroupName: !Ref NodeGroupName
       ClusterName: !Ref ClusterName
       AmiType: "AL2_x86_64"
-      InstanceTypes: 
+      InstanceTypes:
       - t3.large
       CapacityType: SPOT
-      LaunchTemplate: 
+      LaunchTemplate:
         Id: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
-      NodeRole: 
+      NodeRole:
         Fn::ImportValue: EksPoc-IAM-EC2k8sWorkerRoleArn
-      Labels: 
+      Labels:
         alpha.eksctl.io/cluster-name: !Ref ClusterName
         alpha.eksctl.io/nodegroup-name: !Ref NodeGroupName
-      Tags: 
+      Tags:
         alpha.eksctl.io/nodegroup-name: !Ref NodeGroupName
         alpha.eksctl.io/nodegroup-type: "managed"
       Subnets:

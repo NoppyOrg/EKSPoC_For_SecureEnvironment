@@ -31,15 +31,15 @@ Resources:
         - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
       Logging:
         ClusterLogging:
-           EnabledTypes:
+          EnabledTypes:
             - Type: api
             - Type: audit
             - Type: authenticator
             - Type: controllerManager
             - Type: scheduler
-      EncryptionConfig: 
-        - 
-          Provider: 
+      EncryptionConfig:
+        -
+          Provider:
             KeyArn:
               Fn::ImportValue: EksPoc-KMS-KeyArn
           Resources:
@@ -64,7 +64,3 @@ Outputs:
     Value: !GetAtt ControlPlane.OpenIdConnectIssuerUrl
     Export:
       Name: !Sub ${AWS::StackName}-OpenIdConnectIssuerUrl
-
-
-
-      

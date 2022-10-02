@@ -33,36 +33,35 @@ cd EKSPoC_For_SecureEnvironment
 ### (1)-(c) CLI実行用の事前準備
 これ以降のAWS-CLIで共通で利用するパラメータを環境変数で設定しておきます。
 ```shell
-export PROFILE=<PoC環境のAdmministratorAccess権限が実行可能なプロファイル>
+export PROFILE=<PoC環境のAdministratorAccess権限が実行可能なプロファイル>
 export REGION="ap-northeast-1"
 
-#プロファイルの動作テスト
-#COMPUTE_PROFILE
+# プロファイルの動作テスト
+# COMPUTE_PROFILE
 aws --profile ${PROFILE} sts get-caller-identity
 ```
 ## (2)Network準備
 ### (2)-(a) VPC作成
 ```shell
 aws --profile ${PROFILE} --region ${REGION} \
-    cloudformation create-stack \
+    cloudformation deploy \
         --stack-name EksPoc-VPC \
-        --template-body "file://./src/vpc-2az-4subnets.yaml" \
-        --parameters "file://./src/vpc.conf" \
-        --capabilities CAPABILITY_IAM ;
+        --template-file "./src/vpc-2az-4subnets.yaml" \
+        --parameter-overrides "file://./src/vpc.conf"
 ```
 ### (2)-(b) SecurityGroup作成
 ```shell
 aws --profile ${PROFILE} --region ${REGION} \
-    cloudformation create-stack \
+    cloudformation deploy \
         --stack-name EksPoc-SG \
-        --template-body "file://./src/sg.yaml"
+        --template-file "./src/sg.yaml"
 ```
 ### (3)-(c) VPCエンドポイント作成
 ```shell
 aws --profile ${PROFILE} --region ${REGION} \
-    cloudformation create-stack \
+    cloudformation deploy \
         --stack-name EksPoc-VpceSimple \
-        --template-body "file://./src/vpce_simple.yaml" 
+        --template-file "./src/vpce_simple.yaml"
 ```
 
 ## (3)IAMロール&KMSキー作成
@@ -73,54 +72,53 @@ aws --profile ${PROFILE} --region ${REGION} \
 - リソースの特定が必要な場合(例えばECRのリポジトリのARNが必要など)は、リソース作成時に個別にポリシーを付与します。
 ```shell
 aws --profile ${PROFILE} --region ${REGION} \
-    cloudformation create-stack \
+    cloudformation deploy \
         --stack-name EksPoc-IAM \
-        --template-body "file://./src/iam.yaml" \
-        --capabilities CAPABILITY_IAM ;
+        --template-file "./src/iam.yaml" \
+        --capabilities CAPABILITY_IAM
 ```
 ### (3)-(b) KMS CMKキー作成
 ```shell
 aws --profile ${PROFILE} --region ${REGION} \
-    cloudformation create-stack \
+    cloudformation deploy \
         --stack-name EksPoc-KMS \
-        --template-body "file://./src/kms.yaml" ;
+        --template-file "./src/kms.yaml"
 ```
 ## (4)インスタンス準備
 ```shell
-#Bastion & DockerSG & kubectl
+# Bastion & DockerSG & kubectl
 aws --profile ${PROFILE} --region ${REGION} \
-    cloudformation create-stack \
+    cloudformation deploy \
         --stack-name EksPoc-Instances \
-        --template-body "file://./src/instances.yaml" 
+        --template-file "./src/instances.yaml"
 ```
 
 ## (5)dockerイメージ作成とECRへの格納
 ### (5)-(a) ECRリポジトリ作成
 ```shell
 aws --profile ${PROFILE} --region ${REGION} \
-    cloudformation create-stack \
+    cloudformation deploy \
         --stack-name EksPoc-Ecr \
-        --template-body "file://./src/ecr.yaml" \
-        --capabilities CAPABILITY_IAM ;
+        --template-file "./src/ecr.yaml"
 ```
 ### (5)-(b) docker環境準備
 #### (i) DockerDevインスタンスへSSMでOSログイン
 ```shell
-#DockerDevインスタンスのインスタンスID取得
+# DockerDevインスタンスのインスタンスID取得
 DockerDevID=$(aws --profile ${PROFILE} --region ${REGION} --output text \
     cloudformation describe-stacks \
         --stack-name EksPoc-Instances \
         --query 'Stacks[].Outputs[?OutputKey==`DockerDevId`].[OutputValue]')
 echo "DockerDevID = $DockerDevID"
 
-#SSMによるOSログイン
+# SSMによるOSログイン
 aws --profile ${PROFILE} --region ${REGION} \
     ssm start-session \
         --target "${DockerDevID}"
 ```
 #### (ii) docker環境のセットアップ
 ```shell
-#ec2-userにスイッチ
+# ec2-userにスイッチ
 sudo -u ec2-user -i
 ```
 ```shell
@@ -135,50 +133,53 @@ REGION=$( \
 aws configure set region ${REGION}
 aws configure set output json
 
-#動作テスト(作成したECRレポジトリがリストに表示されることを確認)
+# 動作テスト(作成したECRレポジトリがリストに表示されることを確認)
 aws ecr describe-repositories
 ```
 ```shell
-#dockerのセットアップ
+# dockerのセットアップ
 sudo yum install -y docker
 sudo systemctl start docker
 sudo systemctl enable docker
 sudo usermod -a -G docker ec2-user
 ```
 ```shell
-#usermod設定をセッションに反映するためsudoし直す
+# usermod設定をセッションに反映するためsudoし直す
 exit
 
-#ec2-userにスイッチ
+# ec2-userにスイッチ
 sudo -u ec2-user -i
 
-#ec2-userユーザのセカンドグループにdockerが含まれていることを確認する
+# ec2-userユーザのセカンドグループにdockerが含まれていることを確認する
 id
 
-#dockerテスト(下記コマンドでサーバ情報が参照できることを確認)
+# dockerテスト(下記コマンドでサーバ情報が参照できることを確認)
 docker info
 ```
 #### (iii)dockerイメージ作成
 ```shell
-#コンテナイメージ用のディレクトリを作成し移動
+# コンテナイメージ用のディレクトリを作成し移動
 mkdir httpd-container
 cd httpd-container
 
-#データ用フォルダを作成
+# データ用フォルダを作成
 mkdir src
 
-#dockerコンテナの定義ファイルを作成
+# dockerコンテナの定義ファイルを作成
 cat > Dockerfile << EOL
 # setting base image
 FROM php:8.1-apache
 
 RUN set -x && \
-    apt-get update 
+    apt-get update && \
+    apt-get upgrade && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY src/ /var/www/html/
 EOL
 
-#
+# アプリケーションのトップページを作成
 cat > src/index.php << EOL
 <html>
   <head>
@@ -190,15 +191,15 @@ cat > src/index.php << EOL
 </html>
 EOL
 
-#Docker build
+# Docker build
 docker build -t httpd-sample:ver01 .
 docker images
 
-#コンテナの動作確認
+# コンテナの動作確認
 docker run -d -p 8080:80 httpd-sample:ver01
-docker ps #コンテナが稼働していることを確認
+docker ps # コンテナが稼働していることを確認
 
-#接続確認
+# 接続確認
 # <title>PHP Sample</title>という文字が表示されたら成功！！
 curl http://localhost:8080
 ```
@@ -215,22 +216,22 @@ REPO_URL = ${REPO_URL}
 ```shell
 # ECR登録用のタグを作成
 docker tag httpd-sample:ver01 ${REPO_URL}:latest
-docker images #作成したtagが表示されていることを確認
+docker images # 作成したtagが表示されていることを確認
 
-#ECRログイン
-#"Login Succeeded"と表示されることを確認
+# ECRログイン
+# "Login Succeeded"と表示されることを確認
 aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URL}
 
-#イメージのpush
+# イメージのpush
 docker push ${REPO_URL}:latest
 
-#ECR上のレポジトリ確認
+# ECR上のレポジトリ確認
 aws ecr list-images --repository-name ekspoc-repo
 ```
 #### (v)ログアウト
 ```shell
-exit  #ec2-userからの戻る
-exit  #SSMからのログアウト
+exit  # ec2-userから戻る
+exit  # SSMからのログアウト
 ```
 
 ## (5)EKSコントロールプレーン&ノードグループ作成
@@ -240,21 +241,21 @@ exit  #SSMからのログアウト
 ### (5)-(a) 高権限(Bastion)インスタンス環境準備
 #### (i) 高権限インスタンスへSSMでOSログイン
 ```shell
-#DockerDevインスタンスのインスタンスID取得
+# 高権限インスタンスのインスタンスID取得
 HighAuthID=$(aws --profile ${PROFILE} --region ${REGION} --output text \
     cloudformation describe-stacks \
         --stack-name EksPoc-Instances \
         --query 'Stacks[].Outputs[?OutputKey==`BastionAndHighAuthorityId`].[OutputValue]')
 echo "HighAuthID = $HighAuthID"
 
-#SSMによるOSログイン
+# SSMによるOSログイン
 aws --profile ${PROFILE} --region ${REGION} \
     ssm start-session \
         --target "${HighAuthID}"
 ```
 #### (ii) AWS CLIセットアップ
 ```shell
-#ec2-userにスイッチ
+# ec2-userにスイッチ
 sudo -u ec2-user -i
 ```
 ```shell
@@ -277,16 +278,16 @@ curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/
 
 curl -o kubectl.sha256 https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl.sha256
 
-#チェックサム確認
+# チェックサム確認
 if [ $(openssl sha1 -sha256 kubectl|awk '{print $2}') = $(cat kubectl.sha256 | awk '{print $1}') ]; then echo OK; else echo NG; fi
 ```
 ```shell
-#kubectlのパーミッション付与と移動
+# kubectlのパーミッション付与と移動
 chmod +x ./kubectl
 mkdir -p $HOME/bin && mv ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
 echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
 
-#動作テスト
+# 動作テスト
 kubectl version --short --client
 ```
 #### (iv) ソースコードのclone
@@ -299,15 +300,15 @@ cd EKSPoC_For_SecureEnvironment
 #### (i) EKSクラスター作成
 EKSクラスター作成は15分程度かかります。
 ```shell
-aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-EksControlPlane \
-        --template-body "file://./src/eks_control_plane.yaml" 
+        --template-file "./src/eks_control_plane.yaml"
 ```
 
 #### (ii)高権限環境のkubectlをコントロールプレーンに接続
 kubectlからクラスターが参照できるように設定を行います。
 ```shell
-#KESクラスター情報取得
+# EKSクラスター情報取得
 EKS_CLUSTER_NAME=$(aws --output text cloudformation \
     describe-stacks --stack-name EksPoc-EksControlPlane \
     --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
@@ -317,18 +318,18 @@ echo "EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}"
 # kubectl用のconfig取得
 aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME}
 
-#kubectlコマンドからのk8sマスターノード接続確認
+# kubectlコマンドからのk8sマスターノード接続確認
 kubectl get svc
 ```
 
 ### (5)-(c) EKSワーカーグループ作成
 #### (i)aws-auth ConfigMapのクラスターへの適用
+(この手順はセルフマネージド型ノードの場合は必要ですが、マネージド型ノードグループでは不要です)
 ワーカーノードに適用するインスタンスロールをk8sのコントロールプレーンで認識し有効化するために、`aws-auth`でマッピングを行います。
 - [aws-auth設定の最新情報はこちらを参照](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/add-user-role.html#aws-auth-configmapg)
 
 aws-auth ConfigMap が適用済みであるかどうかを確認します。
 ```shell
-
 kubectl describe configmap -n kube-system aws-auth
 ```
 `Error from server (NotFound): configmaps "aws-auth" not found`というエラーが表示された場合は、以下のステップを実行してストック ConfigMap を適用します。
@@ -341,7 +342,7 @@ aws --output text cloudformation describe-stacks \
     --stack-name EksPoc-IAM \
     --query 'Stacks[].Outputs[?OutputKey==`EC2k8sWorkerRoleArn`].[OutputValue]'
 ```
-aws-auth-cm.yaml編集 
+aws-auth-cm.yaml編集
 `<ARN of instance role (not instance profile)>`をWorkerNodeのインスタンスロールARNに修正します。
 ```shell
 vi aws-auth-cm.yaml
@@ -356,58 +357,43 @@ aws-authを適用します。
 ```shell
 # aws-auth-cm.yamlの適用
 kubectl apply -f aws-auth-cm.yaml
-
 ```
 
 #### (ii)ノードグループ作成前の情報取得
+(セルフマネージド型ノードの場合や、マネージド型ノードグループで起動テンプレートのユーザーデータを使用してブートストラップスクリプトに引数を渡す必要がある場合は、Kubernetes API サーバーの URL と証明書の情報が必要です)
 ```shell
-#WorkerへのSSH接続設定
+# WorkerへのSSH接続設定
 KEY_NAME="CHANGE_KEY_PAIR_NAME" #SSH接続する場合
-#KEY_NAME=""                    #SSH接続しない場合はブランクを設定する 
+# KEY_NAME=""                    #SSH接続しない場合はブランクを設定する
 
 EKS_CLUSTER_NAME=$(aws --output text cloudformation \
     describe-stacks --stack-name EksPoc-EksControlPlane \
     --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
-EKS_B64_CLUSTER_CA=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-EksControlPlane \
-    --query 'Stacks[].Outputs[?OutputKey==`CertificateAuthorityData`].[OutputValue]' )
-EKS_API_SERVER_URL=$(aws --output text cloudformation \
-    describe-stacks --stack-name EksPoc-EksControlPlane \
-    --query 'Stacks[].Outputs[?OutputKey==`ControlPlaneEndpoint`].[OutputValue]' )
+# EKS_B64_CLUSTER_CA=$(aws --output text cloudformation \
+#     describe-stacks --stack-name EksPoc-EksControlPlane \
+#     --query 'Stacks[].Outputs[?OutputKey==`CertificateAuthorityData`].[OutputValue]' )
+# EKS_API_SERVER_URL=$(aws --output text cloudformation \
+#     describe-stacks --stack-name EksPoc-EksControlPlane \
+#     --query 'Stacks[].Outputs[?OutputKey==`ControlPlaneEndpoint`].[OutputValue]' )
 echo "
 KEY_NAME           = ${KEY_NAME}
 EKS_CLUSTER_NAME   = ${EKS_CLUSTER_NAME}
-EKS_B64_CLUSTER_CA = ${EKS_B64_CLUSTER_CA}
-EKS_API_SERVER_URL = ${EKS_API_SERVER_URL}
+# EKS_B64_CLUSTER_CA = ${EKS_B64_CLUSTER_CA}
+# EKS_API_SERVER_URL = ${EKS_API_SERVER_URL}
 "
 
 ```
 #### (iii)EKSノードグループ作成
+(セルフマネージド型ノードの場合や、マネージド型ノードグループで起動テンプレートのユーザーデータを使用してブートストラップスクリプトに引数を渡す必要がある場合は、Kubernetes API サーバーの URL と証明書の情報が必要です。なお、マネージド型ノードグループでブートストラックスクリプトに引数を渡す場合、AMI ID の指定も必須となります)
 ```shell
-CFN_STACK_PARAMETERS='
-[
-  {
-    "ParameterKey": "ClusterName",
-    "ParameterValue": "'"${EKS_CLUSTER_NAME}"'"
-  },
-  {
-    "ParameterKey": "B64ClusterCa",
-    "ParameterValue": "'"${EKS_B64_CLUSTER_CA}"'"
-  },
-  {
-    "ParameterKey": "ApiServerUrl",
-    "ParameterValue": "'"${EKS_API_SERVER_URL}"'"
-  },  
-  {
-    "ParameterKey": "KeyName",
-    "ParameterValue": "'"${KEY_NAME}"'"
-  }
-]'
-aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-EksNodeGroup\
-        --template-body "file://./src/eks_worker_nodegrp.yaml" \
-        --parameters "${CFN_STACK_PARAMETERS}" ;
-
+        --template-file "./src/eks_worker_nodegrp.yaml" \
+        --parameter-overrides \
+            ClusterName="${EKS_CLUSTER_NAME}" \
+            KeyName="${KEY_NAME}"
+            # B64ClusterCa="${EKS_B64_CLUSTER_CA}" \
+            # ApiServerUrl="${EKS_API_SERVER_URL}"
 ```
 
 #### (iv) k8sでの状態確認
@@ -415,7 +401,6 @@ aws cloudformation create-stack \
 # WorkerNode状態確認
 kubectl get nodes --watch
 ```
-
 
 ## (6) k8s RBAC設定: IAMユーザ/ロールの追加
 `aws-auth`にk8sのRBAC認証に対応させたいIAMユーザ/ロールを追加します。
@@ -432,17 +417,18 @@ kubectl get nodes --watch
 ### (6)-(a) kubectl実行用EC2のインスタンスロール登録
 - 事前の情報取得
 ```shell
-#kubectl実行用EC2のインスタンスロールのARN取得
+# kubectl実行用EC2のインスタンスロールのARN取得
 KUBECTL_ROL_ARN=$(aws --output text cloudformation \
     describe-stacks --stack-name EksPoc-IAM \
     --query 'Stacks[].Outputs[?OutputKey==`EC2kubectlRoleArn`].[OutputValue]' )
 
 echo "
-KUBECTL_ROL_ARN = ${KUBECTL_ROL_ARN}"
+KUBECTL_ROL_ARN = ${KUBECTL_ROL_ARN}
+"
 ```
 - `aws-auth ConfigMap`の編集
 ```shell
-#aws-auth ConfigMapを開く
+# aws-auth ConfigMapを開く
 kubectl edit -n kube-system configmap/aws-auth
 ```
 ```yaml
@@ -453,25 +439,23 @@ kubectl edit -n kube-system configmap/aws-auth
 apiVersion: v1
 data:
   mapRoles: |
-    -
-      rolearn: arn:aws:iam::616605178605:role/EksPoc-IAM-EC2k8sWorkerRole-8BI00X63GF2P
+    - rolearn: arn:aws:iam::616605178605:role/EksPoc-IAM-EC2k8sWorkerRole-8BI00X63GF2P
       username: system:node:{{EC2PrivateDNSName}}
-　    groups:
+      groups:
         - system:bootstrappers
         - system:nodes
-<↓ココから下を追加>
-    - 
-      rolearn: "$KUBECTL_ROL_ARN のARN値を指定"
+# ↓ココから下を追加
+    - rolearn: "$KUBECTL_ROL_ARN のARN値を指定"
       username: kubectladmin
       groups:
         - system:masters
-<ここまで>
-<以下略>
+# ここまで
+# 以下略
 ```
 
-### (6)-(b) 参照ユーザの追加
+### (6)-(b) コンソールユーザの追加
 ```shell
-#aws-auth ConfigMapを開く
+# aws-auth ConfigMapを開く
 kubectl edit -n kube-system configmap/aws-auth
 ```
 ```yaml
@@ -482,25 +466,22 @@ kubectl edit -n kube-system configmap/aws-auth
 apiVersion: v1
 data:
   mapRoles: |
-    -
-      rolearn: arn:aws:iam::616605178605:role/EksPoc-IAM-EC2k8sWorkerRole-8BI00X63GF2P
+    - rolearn: arn:aws:iam::616605178605:role/EksPoc-IAM-EC2k8sWorkerRole-8BI00X63GF2P
       username: system:node:{{EC2PrivateDNSName}}
 　    groups:
         - system:bootstrappers
         - system:nodes
-    - 
-      rolearn: "$KUBECTL_ROL_ARN のARN値を指定"
+    - rolearn: "$KUBECTL_ROL_ARN のARN値を指定"
       username: kubectladmin
       groups:
         - system:masters
-<↓ココから下を追加>
-    - 
-      rolearn: "コンソール操作時の権限のARNを指定"
+# ↓ココから下を追加
+    - rolearn: "コンソール操作時の権限のARNを指定"
       username: consoleadmin
       groups:
         - system:masters
-<ここまで>
-<以下略>
+# ここまで
+# 以下略
 ```
 
 ## (7) 動作テスト(podの起動)
@@ -519,24 +500,24 @@ echo "
 REPO_URL = ${REPO_URL}
 "
 ```
-### (7)-(b) kubernetestのDeploymentとService作成
+### (7)-(b) kubernetesのDeploymentとService作成
 #### (i) 定義ファイルの準備
 ```shell
-#Deployment定義ファイルの作成
-#環境固有となるECRレポジトリURL情報をDeploymentに設定します。
+# Deployment定義ファイルの作成
+# 環境固有となるECRレポジトリURL情報をDeploymentに設定します。
 sed -e "s;REPO_URL;${REPO_URL};" k8s_define/httpd-deployment.yaml.template > httpd-deployment.yaml
 cat httpd-deployment.yaml
 
-#Service定義ファイルの確認
+# Service定義ファイルの確認
 cat k8s_define/httpd-service.yaml
 ```
 #### (ii) DeploymentとServiceの適用
 kubectlコマンドを利用して定義を適用します。
 ```shell
-#Deploymentの適用
+# Deploymentの適用
 kubectl apply -f httpd-deployment.yaml
 
-#Serviceの適用
+# Serviceの適用
 kubectl apply -f k8s_define/httpd-service.yaml
 ```
 #### (iii) 状態を確認します。
@@ -549,7 +530,7 @@ httpd-deployment   0/2     2            0           9s    httpd        141247782
 ```
 - Podの状態確認
 ```shell
-kubectl get pods -o wide 
+kubectl get pods -o wide
 
 NAME                               READY   STATUS    RESTARTS   AGE     IP            NODE                                             NOMINATED NODE   READINESS GATES
 httpd-deployment-65f68b9dfc-2bx8n   1/1     Running   0          29s   10.1.39.243    ip-10-1-42-54.ap-northeast-1.compute.internal     <none>           <none>
@@ -586,10 +567,10 @@ curl http://localhost:9999
 
 ### (7)-(c) ServiceとDeploymentの削除
 ```shell
-#Serviceの削除
+# Serviceの削除
 kubectl delete -f k8s_define/httpd-service.yaml
 
-#Deploymentの削除
+# Deploymentの削除
 kubectl delete -f httpd-deployment.yaml
 ```
 
@@ -607,9 +588,9 @@ sudo yum -y install jq
 ### (1)-(b) VPCエンドポイント作成
 OIDCの認証情報取得のためにstsへのアクセスを行うため、STSのVPCエンドポイントを追加します。
 ```shell
- aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-Vpce-oidc \
-        --template-body "file://./src/vpce_for_oidc.yaml"
+        --template-file "./src/vpce_for_oidc.yaml"
 ```
 ### (1)-(c) OIDCプロバイダのサムプリント取得
 サムプリントは、証明書の暗号化ハッシュです。
@@ -625,7 +606,7 @@ OIDCの認証情報取得のためにstsへのアクセスを行うため、STS�
 OpenIdConnectIssuerUrl=$(aws --output text \
     cloudformation describe-stacks \
         --stack-name EksPoc-EksControlPlane \
-        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]' )
+        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]')
 ```
 #### (ii) OICDプロバイダーのから証明書を取得
 ```shell
@@ -633,39 +614,39 @@ OpenIdConnectIssuerUrl=$(aws --output text \
 URL="${OpenIdConnectIssuerUrl}/.well-known/openid-configuration"
 echo $URL
 
-#ドメイン取得
+# ドメイン取得
 FQDN=$(curl $URL 2>/dev/null | jq -r '.jwks_uri' | sed -E 's/^.*(http|https):\/\/([^/]+).*/\2/g')
 echo $FQDN
 
 #サーバー証明書の取得
- echo | openssl s_client -connect $FQDN:443 -servername $FQDN -showcerts 
+echo | openssl s_client -connect $FQDN:443 -servername $FQDN -showcerts
 ```
 opensslコマンドを実行すると、次のような証明書が複数表示されます。
 複数の証明書のうち表示される最後 (コマンド出力の最後) の証明書を特定します。
 ```
 -----BEGIN CERTIFICATE-----
- MIICiTCCAfICCQD6m7oRw0uXOjANBgkqhkiG9w0BAQUFADCBiDELMAkGA1UEBhMC
- VVMxCzAJBgNVBAgTAldBMRAwDgYDVQQHEwdTZWF0dGxlMQ8wDQYDVQQKEwZBbWF6
- b24xFDASBgNVBAsTC0lBTSBDb25zb2xlMRIwEAYDVQQDEwlUZXN0Q2lsYWMxHzAd
- BgkqhkiG9w0BCQEWEG5vb25lQGFtYXpvbi5jb20wHhcNMTEwNDI1MjA0NTIxWhcN
- MTIwNDI0MjA0NTIxWjCBiDELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAldBMRAwDgYD
- VQQHEwdTZWF0dGxlMQ8wDQYDVQQKEwZBbWF6b24xFDASBgNVBAsTC0lBTSBDb25z
- b2xlMRIwEAYDVQQDEwlUZXN0Q2lsYWMxHzAdBgkqhkiG9w0BCQEWEG5vb25lQGFt
- YXpvbi5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMaK0dn+a4GmWIWJ
- 21uUSfwfEvySWtC2XADZ4nB+BLYgVIk60CpiwsZ3G93vUEIO3IyNoH/f0wYK8m9T
- rDHudUZg3qX4waLG5M43q7Wgc/MbQITxOUSQv7c7ugFFDzQGBzZswY6786m86gpE
- Ibb3OhjZnzcvQAaRHhdlQWIMm2nrAgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAtCu4
- nUhVVxYUntneD9+h8Mg9q6q+auNKyExzyLwaxlAoo7TJHidbtS4J5iNmZgXL0Fkb
- FFBjvSfpJIlJ00zbhNYS5f6GuoEDmFJl0ZxBHjJnyp378OD8uTs7fLvjx79LjSTb
- NYiytVbZPQUQ5Yaxu2jXnimvw3rrszlaEXAMPLE=
- -----END CERTIFICATE-----
+MIICiTCCAfICCQD6m7oRw0uXOjANBgkqhkiG9w0BAQUFADCBiDELMAkGA1UEBhMC
+VVMxCzAJBgNVBAgTAldBMRAwDgYDVQQHEwdTZWF0dGxlMQ8wDQYDVQQKEwZBbWF6
+b24xFDASBgNVBAsTC0lBTSBDb25zb2xlMRIwEAYDVQQDEwlUZXN0Q2lsYWMxHzAd
+BgkqhkiG9w0BCQEWEG5vb25lQGFtYXpvbi5jb20wHhcNMTEwNDI1MjA0NTIxWhcN
+MTIwNDI0MjA0NTIxWjCBiDELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAldBMRAwDgYD
+VQQHEwdTZWF0dGxlMQ8wDQYDVQQKEwZBbWF6b24xFDASBgNVBAsTC0lBTSBDb25z
+b2xlMRIwEAYDVQQDEwlUZXN0Q2lsYWMxHzAdBgkqhkiG9w0BCQEWEG5vb25lQGFt
+YXpvbi5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMaK0dn+a4GmWIWJ
+21uUSfwfEvySWtC2XADZ4nB+BLYgVIk60CpiwsZ3G93vUEIO3IyNoH/f0wYK8m9T
+rDHudUZg3qX4waLG5M43q7Wgc/MbQITxOUSQv7c7ugFFDzQGBzZswY6786m86gpE
+Ibb3OhjZnzcvQAaRHhdlQWIMm2nrAgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAtCu4
+nUhVVxYUntneD9+h8Mg9q6q+auNKyExzyLwaxlAoo7TJHidbtS4J5iNmZgXL0Fkb
+FFBjvSfpJIlJ00zbhNYS5f6GuoEDmFJl0ZxBHjJnyp378OD8uTs7fLvjx79LjSTb
+NYiytVbZPQUQ5Yaxu2jXnimvw3rrszlaEXAMPLE=
+-----END CERTIFICATE-----
 ```
- 証明書 (`-----BEGIN CERTIFICATE-----` および `-----END CERTIFICATE-----` 行を含む) をコピーして、テキストファイルに貼り付けます。次に、`certificate.crt` という名前でファイルを保存します。
+証明書 (`-----BEGIN CERTIFICATE-----` および `-----END CERTIFICATE-----` 行を含む) をコピーして、テキストファイルに貼り付けます。次に、`certificate.crt` という名前でファイルを保存します。
 ```shell
 cat > certificate.crt
-コピーした証明書を貼り付けて、最後にCTRL+Dで終了する
+# コピーした証明書を貼り付けて、最後にCTRL+Dで終了する
 
-#ファイルの確認
+# ファイルの確認
 cat certificate.crt
 ```
 
@@ -680,7 +661,6 @@ aws iam create-open-id-connect-provider \
     --url "${OpenIdConnectIssuerUrl}" \
     --thumbprint-list "${THUMBPRINT}" \
     --client-id-list "sts.amazonaws.com"
-
 ```
 
 ## (2) Cluster Autoscalerのセットアップ
@@ -694,41 +674,40 @@ Cluster Autoscalerを導入して、kubernetesからAutoScalingを調整して�
 Cluster Autoscalerは、ワーカーノードのリソース利用状況に合わせて、EC2 Autoscalingのインスタンス数設定を変更することで、キャパシティーの調整を行います。
 Cluster AutoscalerからEC2 Autoscalingを操作できるようにするために、EC2 AutoscalingのVPCエンドポイントを追加します。
 ```shell
- aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-Vpce-Autoscaler \
-        --template-body "file://./src/vpce_for_autoscaler.yaml"
+        --template-file "./src/vpce_for_autoscaler.yaml"
 ```
 
 ### (2)-(b) AutoscalerのdockerイメージをECRに格納
-本検証環境は、kubernetesのワーカーノードから外部にはアクセスができないため、そのままではCluster Autoscalerのdocerイメージが取得できません。
-そのためECRリポジトリを用意し、Cluster Autoscalerのdocerイメージを格納しておきます。
+本検証環境は、kubernetesのワーカーノードから外部にはアクセスができないため、そのままではCluster Autoscalerのdockerイメージが取得できません。
+そのためECRリポジトリを用意し、Cluster Autoscalerのdockerイメージを格納しておきます。
 #### (i) Autoscalerイメージ保管用ECRリポジトリ作成
 ```shell
-aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-AutoscalerEcr \
-        --template-body "file://./src/Autoscaler/ecr_for_autoscaler.yaml" 
+        --template-file "./src/Autoscaler/ecr_for_autoscaler.yaml"
 ```
 
 #### (ii) (Dockerインスタンス)Autoscalerイメージの取得と保管
 以下の作業は、別端末を開いてDockerインスタンスにログインして作業します。
 - Dockerインスタンスへのログイン
 ```shell
-export PROFILE=<PoC環境のAdmministratorAccess権限が実行可能なプロファイル>
+export PROFILE=<PoC環境のAdministratorAccess権限が実行可能なプロファイル>
 export REGION="ap-northeast-1"
 
-#プロファイルの動作テスト
-#COMPUTE_PROFILE
+# プロファイルの動作テスト
 aws --profile ${PROFILE} sts get-caller-identity
 ```
 ```shell
-#DockerDevインスタンスのインスタンスID取得
+# DockerDevインスタンスのインスタンスID取得
 DockerDevID=$(aws --profile ${PROFILE} --region ${REGION} --output text \
     cloudformation describe-stacks \
         --stack-name EksPoc-Instances \
         --query 'Stacks[].Outputs[?OutputKey==`DockerDevId`].[OutputValue]')
 echo "DockerDevID = $DockerDevID"
 
-#SSMによるOSログイン
+# SSMによるOSログイン
 aws --profile ${PROFILE} --region ${REGION} \
     ssm start-session \
         --target "${DockerDevID}"
@@ -756,7 +735,7 @@ AutoscalerのDockerイメージをローカルにpullします。
 docker pull "${AUTOSCALER_PATH}"
 ```
 ```shell
-#取得した情報の確認
+# 取得した情報の確認
 docker images
 ```
 - dockerイメージをECRに格納
@@ -774,16 +753,16 @@ ECRへのpush
 ```shell
 # ECR登録用のタグを作成
 docker tag ${AUTOSCALER_PATH} ${REPO_URL}:latest
-docker images #作成したtagが表示されていることを確認
+docker images # 作成したtagが表示されていることを確認
 
-#ECRログイン
-#"Login Succeeded"と表示されることを確認
+# ECRログイン
+# "Login Succeeded"と表示されることを確認
 aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URL}
 
-#イメージのpush
+# イメージのpush
 docker push ${REPO_URL}:latest
 
-#ECR上のレポジトリ確認
+# ECR上のレポジトリ確認
 aws ecr list-images --repository-name autoscaler-repo
 ```
 ### (iii)ログアウト
@@ -798,18 +777,18 @@ exit
 ### (2)-(c) Cluster Autoscaler用IAMロール追加
 #### (i)IAMロールの信頼関係(Trust relationship)設定用の情報取得
 ```shell
-#EKSクラスターのOIDC情報取得
-OIDC_FQDN=$(aws --output text \
+# EKSクラスターのOIDC情報取得
+OIDCProviderId=$(aws --output text \
     cloudformation describe-stacks \
         --stack-name EksPoc-EksControlPlane \
-        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]' | sed -E 's/^.*(http|https):\/\/([^/]+).*/\2/g')
-echo "OIDC_FQDN = ${OIDC_FQDN}"
+        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]' | cut -d "/" -f 5)
+echo "OIDCProviderId = ${OIDCProviderId}"
 
-#該当OIDCプロバイダーのARN取得
-OIDCProviderARN=$(aws --output text iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[].Arn' | grep $OIDC_FQDN)
+# 該当OIDCプロバイダーのARN取得
+OIDCProviderARN=$(aws --output json iam list-open-id-connect-providers | jq -r '.OpenIDConnectProviderList[].Arn | select( . | contains("'${OIDCProviderId}'") )')
 echo "OIDCProviderARN = ${OIDCProviderARN}"
 
-#該当OIDCプロバイダーのURI取得
+# 該当OIDCプロバイダーのURI取得
 OIDCProviderURI=$(aws --output text iam get-open-id-connect-provider --open-id-connect-provider-arn ${OIDCProviderARN} --query 'Url')
 echo "OIDCProviderURI = ${OIDCProviderURI}"
 ```
@@ -821,7 +800,7 @@ sed -e "s;OIDCProviderARN;${OIDCProviderARN};g" \
 ```
 #### (iii)Cluster Autoscaler用のIAMロール作成
 ```shell
-#KESクラスター情報取得
+# EKSクラスター情報取得
 EKS_CLUSTER_NAME=$(aws --output text cloudformation \
     describe-stacks --stack-name EksPoc-EksControlPlane \
     --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
@@ -830,40 +809,40 @@ echo "EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}"
 IAM_ROLE_NAME=${EKS_CLUSTER_NAME}-Autoscaler_Role
 ```
 ```shell
-#IAMロール作成
+# IAMロール作成
 aws iam create-role \
     --role-name "${IAM_ROLE_NAME}" \
     --assume-role-policy-document "file://cluster_autoscaler_iam_role_trust_policy.json"
 
-#IAMポリシー(インラインポリシー)のアタッチ
+# IAMポリシー(インラインポリシー)のアタッチ
 aws iam put-role-policy \
     --role-name "${IAM_ROLE_NAME}" \
     --policy-name Autoscaler \
-    --policy-document "file://src/Autoscaler/cluster_autoscaler_iam_policy.json"
+    --policy-document "file://./src/Autoscaler/cluster_autoscaler_iam_policy.json"
 ```
 ### (2)-(d) ワーカーノードのインスタンスロールへの権限付与
 下記ドキュメントに`Attach the above created policy to the instance role that's attached to your Amazon EKS worker nodes.`とあるので、同じIAMポリシーをワーカーノードのインスタンスロールにも付与します。
 - https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/CA_with_AWS_IAM_OIDC.md
 
 ```shell
-#ワーカーノードのインスタンスロールのロール名を取得
+# ワーカーノードのインスタンスロールのロール名を取得
 WORKER_ROLE_NAME=$(aws --output text cloudformation \
     describe-stacks --stack-name EksPoc-IAM \
     --query 'Stacks[].Outputs[?OutputKey==`EC2k8sWorkerRoleName`].[OutputValue]' )
 echo "WORKER_ROLE_NAME = ${WORKER_ROLE_NAME}"
 ```
 ```shell
-#IAMポリシー(インラインポリシー)のアタッチ
+# IAMポリシー(インラインポリシー)のアタッチ
 aws iam put-role-policy \
     --role-name "${WORKER_ROLE_NAME}" \
     --policy-name Autoscaler \
-    --policy-document "file://src/Autoscaler/cluster_autoscaler_iam_policy.json"
+    --policy-document "file://./src/Autoscaler/cluster_autoscaler_iam_policy.json"
 ```
 
 ### (2)-(e) Autoscalerの定義サンプル取得と編集
 #### (ii) ロールのARN確認
 ```shell
-#ロールのARNをメモ帳などに控えておきます。
+# ロールのARNをメモ帳などに控えておきます。
 aws --output text iam get-role --role-name "${IAM_ROLE_NAME}" --query 'Role.Arn'
 ```
 
@@ -876,14 +855,14 @@ curl -o cluster-autoscaler-autodiscover.yaml https://raw.githubusercontent.com/k
 エディタで開いて定義ファイルを編集します。
 - クラスター名の変更
     - `<YOUR CLUSTER NAME>`の部分を実際のEKSクラスター名に変更します。
-    - `k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.0`の部分を、(2)-(b)で保管したECRに変更します。URIは(2)-(b)で取得したものでタグは`latest`にします
+    - `k8s.gcr.io/autoscaling/cluster-autoscaler:v1.22.2`の部分を、(2)-(b)で保管したECRに変更します。URIは(2)-(b)で取得したものでタグは`latest`にします
         - 変更後のimageパスの例: `999999999999.dkr.ecr.ap-northeast-1.amazonaws.com/autoscaler-repo:latest`
     - 起動オプションの変更
         - `--aws-use-static-instance-list=true`を追加。(デフォルトではEC2インスタンスの最新リスト取得のために`api.pricing.us-east-1.amazonaws.com`にアクセスするが、インターネット接続がない環境ではエラーになりAutoscalerが起動失敗するため無効化する)
 ```yaml
       serviceAccountName: cluster-autoscaler
       containers:
-        - image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.0  <<== 変更する
+        - image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.22.2  <<== 変更する
           name: cluster-autoscaler
           resources:
             limits:
@@ -968,7 +947,7 @@ kubectl apply -f httpd-deployment.yaml
 # deploymentの状態確認
 kubectl get deployments httpd-deployment
 
-#ワーカーノードの確認
+# ワーカーノードの確認
 kubectl get nodes
 ```
 また、Autoscalingの`Desired capacity`が変更されているかを確認する。
@@ -980,37 +959,37 @@ kubectl get nodes
 
 ## (1) PrivateクラスターのためのVPCE作成とECRイメージの格納
 ### (1)-(a) AWS Load Balancer Controller用にVPCエンドポイントを追加
-AWS Load Balancer Controllerから、ELBを操作できるようにするために、Elastic LoadbalancerのVPCエンドポイントを追加します。
+AWS Load Balancer Controllerから、ELBを操作できるようにするために、Elastic Load BalancingのVPCエンドポイントを追加します。
 ```shell
- aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-Vpce-AwsLoadBalancerController \
-        --template-body "file://./src/vpce_for_aws-load-balancer-controller.yaml"
+        --template-file "./src/vpce_for_aws-load-balancer-controller.yaml"
 ```
 
 ### (1)-(b) AWS Load Balancer ControllerとCert-ManagerのDockerイメージの保管
-本検証環境はkubernetesのワーカーノードから外部にはアクセスができないため、ECRリポジトリを用意しAWS Load Balancer Controllerのdocerイメージを格納しておきます。
+本検証環境はkubernetesのワーカーノードから外部にはアクセスができないため、ECRリポジトリを用意しAWS Load Balancer Controllerのdockerイメージを格納しておきます。
 #### (i) ECRリポジトリ作成
 - AWS Load Balancer Controller
 ```shell
-aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-AwsLoadBalancerControllerEcr \
-        --template-body "file://./src/AWSLoadBalancerController/ecr_for_aws-load-balancer-controller.yaml"
+        --template-file "./src/AWSLoadBalancerController/ecr_for_aws-load-balancer-controller.yaml"
 ```
 - CERT-Manager
 ```shell
-aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-CertManagerControllerEcr \
-        --template-body "file://./src/AWSLoadBalancerController/ecr_for_cert-manager-controller.yaml"
+        --template-file "./src/AWSLoadBalancerController/ecr_for_cert-manager-controller.yaml"
 ```
 ```shell
-aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-CertManagerCainjectorEcr \
-        --template-body "file://./src/AWSLoadBalancerController/ecr_for_cert-manager-cainjector.yaml"
+        --template-file "./src/AWSLoadBalancerController/ecr_for_cert-manager-cainjector.yaml"
 ```
 ```shell
-aws cloudformation create-stack \
+aws cloudformation deploy \
         --stack-name EksPoc-CertManagerWebhookEcr \
-        --template-body "file://./src/AWSLoadBalancerController/ecr_for_cert-manager-webhook.yaml"
+        --template-file "./src/AWSLoadBalancerController/ecr_for_cert-manager-webhook.yaml"
 ```
 
 #### (ii) AWS Load Balancer Controllerの最新バージョンを確認
@@ -1018,31 +997,30 @@ aws cloudformation create-stack \
 https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases
 
 最新バージョンを確認したら下記情報を控えておく
-- バージョン名: 例えば`v.2.4.1`など
-- Assetsの定義ファイルのURI: Assetsのリストでファイル名が`v2_4_1_full.yaml`などとあるYAML定義のURLを控える
-- DockerイメージのURI: リリース情報の冒頭に`Image: docker.io/amazon/aws-alb-ingress-controller:v2.4.1`という形で表示されているのでそこから取得するか、上記のYAML定義の中から情報を取得する。
+- バージョン名: 例えば`v.2.4.4`など
+- Assetsの定義ファイルのURI: Assetsのリストでファイル名が`v2_4_4_full.yaml`などとあるYAML定義のURLを控える
+- DockerイメージのURI: リリース情報の冒頭に`Image: docker.io/amazon/aws-alb-ingress-controller:v2.4.4`という形で表示されているのでそこから取得するか、上記のYAML定義の中から情報を取得する。
 
 #### (iii) (Dockerインスタンス)AWS Load Balancer Controllerイメージの取得と保管
 
 以下の作業は、別端末を開いてDockerインスタンスにログインして作業します。
 - Dockerインスタンスへのログイン
 ```shell
-export PROFILE=<PoC環境のAdmministratorAccess権限が実行可能なプロファイル>
+export PROFILE=<PoC環境のAdministratorAccess権限が実行可能なプロファイル>
 export REGION="ap-northeast-1"
 
-#プロファイルの動作テスト
-#COMPUTE_PROFILE
+# プロファイルの動作テスト
 aws --profile ${PROFILE} sts get-caller-identity
 ```
 ```shell
-#DockerDevインスタンスのインスタンスID取得
+# DockerDevインスタンスのインスタンスID取得
 DockerDevID=$(aws --profile ${PROFILE} --region ${REGION} --output text \
     cloudformation describe-stacks \
         --stack-name EksPoc-Instances \
         --query 'Stacks[].Outputs[?OutputKey==`DockerDevId`].[OutputValue]')
 echo "DockerDevID = $DockerDevID"
 
-#SSMによるOSログイン
+# SSMによるOSログイン
 aws --profile ${PROFILE} --region ${REGION} \
     ssm start-session \
         --target "${DockerDevID}"
@@ -1062,7 +1040,7 @@ AWS Load Balancer ControllerのDockerイメージをローカルにpullします
 docker pull "${AWSLBCTL_PATH}"
 ```
 ```shell
-#取得した情報の確認
+# 取得した情報の確認
 docker images
 ```
 - dockerイメージをECRに格納
@@ -1080,16 +1058,16 @@ ECRへのpush
 ```shell
 # ECR登録用のタグを作成
 docker tag ${AWSLBCTL_PATH} ${REPO_URL}:latest
-docker images #作成したtagが表示されていることを確認
+docker images # 作成したtagが表示されていることを確認
 
-#ECRログイン
-#"Login Succeeded"と表示されることを確認
+# ECRログイン
+# "Login Succeeded"と表示されることを確認
 aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URL}
 
-#イメージのpush
+# イメージのpush
 docker push ${REPO_URL}:latest
 
-#ECR上のレポジトリ確認
+# ECR上のレポジトリ確認
 aws ecr list-images --repository-name autoscaler-repo
 ```
 
@@ -1115,7 +1093,7 @@ grep -e 'image:' cert-manager.yaml
 ```shell
 CERT_MGR_CAIN="<cert-manager-cainjectorのパスを設定>"
 CERT_MGR_CONT="<cert-manager-controllerのパスを設定>"
-CERT_MGR_WEBH="<quay.io/jetstack/cert-manager-webhook:のパスを設定>"
+CERT_MGR_WEBH="<cert-manager-webhookのパスを設定>"
 ```
 
 - ECRレポジトリのURI取得
@@ -1162,7 +1140,7 @@ aws ecr list-images --repository-name cert-manager-cainjector-repo
 docker tag ${CERT_MGR_CONT} ${CERT_MGR_CONT_REPO_URL}:latest
 aws ecr get-login-password | docker login --username AWS --password-stdin ${CERT_MGR_CONT_REPO_URL}
 docker push ${CERT_MGR_CONT_REPO_URL}:latest
-aws ecr list-images --repository-name cert-manager-controller-repo 
+aws ecr list-images --repository-name cert-manager-controller-repo
 ```
 
 - ECRへのPush(cert-manager-webhook)
@@ -1185,23 +1163,23 @@ exit
 
 ### (2)-(a) IAMポリシー取得
 ```shell
-curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.0/docs/install/iam_policy.json
+curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
 ```
 
 ### (2)-(b) IAMロールの信頼関係(Trust relationship)設定用の情報取得
 ```shell
-#EKSクラスターのOIDC情報取得
-OIDC_FQDN=$(aws --output text \
+# EKSクラスターのOIDC情報取得
+OIDCProviderId=$(aws --output text \
     cloudformation describe-stacks \
         --stack-name EksPoc-EksControlPlane \
-        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]' | sed -E 's/^.*(http|https):\/\/([^/]+).*/\2/g')
-echo "OIDC_FQDN = ${OIDC_FQDN}"
+        --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]' | cut -d "/" -f 5)
+echo "OIDCProviderId = ${OIDCProviderId}"
 
-#該当OIDCプロバイダーのARN取得
-OIDCProviderARN=$(aws --output text iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[].Arn' | grep $OIDC_FQDN)
+# 該当OIDCプロバイダーのARN取得
+OIDCProviderARN=$(aws --output json iam list-open-id-connect-providers | jq -r '.OpenIDConnectProviderList[].Arn | select( . | contains("'${OIDCProviderId}'") )')
 echo "OIDCProviderARN = ${OIDCProviderARN}"
 
-#該当OIDCプロバイダーのURI取得
+# 該当OIDCプロバイダーのURI取得
 OIDCProviderURI=$(aws --output text iam get-open-id-connect-provider --open-id-connect-provider-arn ${OIDCProviderARN} --query 'Url')
 echo "OIDCProviderURI = ${OIDCProviderURI}"
 ```
@@ -1219,7 +1197,7 @@ cat aws-load-balancer-controller_iam_role_trust_policy.json
 ### (2)-(d) IAMロールの作成
 IAMロール名を設定します。
 ```shell
-#KESクラスター情報取得
+# EKSクラスター情報取得
 EKS_CLUSTER_NAME=$(aws --output text cloudformation \
     describe-stacks --stack-name EksPoc-EksControlPlane \
     --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
@@ -1229,12 +1207,12 @@ LB_CTL_IAM_ROLE_NAME=${EKS_CLUSTER_NAME}-AWS-Loadbalancer-Controler-Role
 ```
 IAMロールを作成します。
 ```shell
-#IAMロール作成
+# IAMロール作成
 aws iam create-role \
     --role-name "${LB_CTL_IAM_ROLE_NAME}" \
     --assume-role-policy-document "file://aws-load-balancer-controller_iam_role_trust_policy.json"
 
-#IAMポリシー(インラインポリシー)のアタッチ
+# IAMポリシー(インラインポリシー)のアタッチ
 aws iam put-role-policy \
     --role-name "${LB_CTL_IAM_ROLE_NAME}" \
     --policy-name loadbalancer \
@@ -1338,8 +1316,9 @@ cert-manager-webhook      1/1     1            1           55s
 ### (4)-(a) Controllerのマニフェスト取得
 (1)-(b)で確認したAWS Load Balancer ControllerバージョンのYAML定義ファイルを取得します。
 ```shell
-# v2_4_0_full.yamlの場合
-curl -Lo v2_4_0_full.yaml https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.4.0/v2_4_0_full.yaml
+# v2_4_4_full.yamlの場合
+curl -Lo v2_4_4_full.yaml https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.4.4/v2_4_4_full.yaml
+curl -Lo v2_4_4_ingclass.yaml https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.4.4/v2_4_4_ingclass.yaml
 ```
 ### Controllerのマニフェストの編集
 
@@ -1351,7 +1330,7 @@ curl -Lo v2_4_0_full.yaml https://github.com/kubernetes-sigs/aws-load-balancer-c
 #### (i)情報の取得
 取得したクラスター名とLoadBalancerのECRのURIを控えておきます。
 ```shell
-#KESクラスター情報取得
+# EKSクラスター情報取得
 EKS_CLUSTER_NAME=$(aws --output text cloudformation \
     describe-stacks --stack-name EksPoc-EksControlPlane \
     --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
@@ -1415,7 +1394,7 @@ spec:
         - --enable-shield=false            #<== 追加
         - --enable-waf=false               #<== 追加
         - --enable-wafv2=false             #<== 追加
-        image: amazon/aws-alb-ingress-controller:v2.4.0 #<<== ECRのイメージのパス "ECRURI:latest"に変更する
+        image: amazon/aws-alb-ingress-controller:v2.4.4 #<<== ECRのイメージのパス "ECRURI:latest"に変更する
         livenessProbe:
           failureThreshold: 2
 ```
@@ -1436,10 +1415,11 @@ metadata:
 
 ### (iii)マニフェストの適用
 ```shell
-#マニフェストの適用
-#kubectl apply -f ファイル名
-#以下はv2_4_0_full.yamlファイルの場合
-kubectl apply -f v2_4_0_full.yaml
+# マニフェストの適用
+# kubectl apply -f ファイル名
+# 以下はv2_4_4_full.yamlファイルの場合
+kubectl apply -f v2_4_4_full.yaml
+kubectl apply -f v2_4_4_ingclass.yaml
 ```
 状態を確認します。
 ```shell
@@ -1502,8 +1482,8 @@ REPO_URL = ${REPO_URL}
 
 #### (i) 定義ファイルの準備
 ```shell
-#Deployment定義ファイルの作成
-#環境固有となるECRレポジトリURL情報をDeploymentに設定します。
+# Deployment定義ファイルの作成
+# 環境固有となるECRレポジトリURL情報をDeploymentに設定します。
 sed -e "s;REPO_URL;${REPO_URL};" k8s_define/httpd-ingress.yaml.template > httpd-ingress.yaml
 cat httpd-ingress.yaml
 ```
@@ -1516,7 +1496,7 @@ kubectl apply -f httpd-ingress.yaml
 
 状態を確認します。
 ```shell
-kubectl get cm,deployment,pod,svc -o wide
+kubectl get cm,deployment,pod,svc,ing -o wide
 
 
 NAME                         DATA   AGE
@@ -1532,6 +1512,9 @@ pod/httpd-deployment-ff96f4749-m5b6r   1/1     Running   0          10m   10.1.4
 NAME                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE    SELECTOR
 service/httpd-service   NodePort    172.20.192.129   <none>        80:32679/TCP   10m    app.kubernetes.io/name=httpd-pod
 service/kubernetes      ClusterIP   172.20.0.1       <none>        443/TCP        2d3h   <none>
+
+NAME                                      CLASS   HOSTS   ADDRESS   PORTS   AGE
+ingress.networking.k8s.io/httpd-ingress   alb     *                 80      83s
 ```
 #### (ii) 確認
 マネージメントコンソールなどで、ALBのURLを確認し、ブラウザやcurlコマンドで`http://ALBのDNS`でアクセス可能か確認します。

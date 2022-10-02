@@ -12,7 +12,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: For Bastion Instances SG
-      VpcId: 
+      VpcId:
         Fn::ImportValue: EksPoc-VPC-VpcId
       Tags:
         - Key: Name
@@ -22,7 +22,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: For Docker Instances SG
-      VpcId: 
+      VpcId:
         Fn::ImportValue: EksPoc-VPC-VpcId
       Tags:
         - Key: Name
@@ -32,7 +32,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: For EKS Admin Instances SG
-      VpcId: 
+      VpcId:
         Fn::ImportValue: EksPoc-VPC-VpcId
       Tags:
         - Key: Name
@@ -43,7 +43,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: For EKS Worker Nodes
-      VpcId: 
+      VpcId:
         Fn::ImportValue: EksPoc-VPC-VpcId
       Tags:
         - Key: Name
@@ -78,7 +78,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: For EKS Control Plane
-      VpcId: 
+      VpcId:
         Fn::ImportValue: EksPoc-VPC-VpcId
       Tags:
         - Key: Name
@@ -113,7 +113,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: For VPC Endpoints
-      VpcId: 
+      VpcId:
         Fn::ImportValue: EksPoc-VPC-VpcId
       Tags:
         - Key: Name
