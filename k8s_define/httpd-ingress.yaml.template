@@ -13,6 +13,18 @@ spec:
       labels:
         app.kubernetes.io/name: httpd-pod
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - httpd-pod
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
       containers:
       - name: httpd
         image: REPO_URL:latest
