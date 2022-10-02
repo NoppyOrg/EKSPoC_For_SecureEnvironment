@@ -25,7 +25,7 @@ Parameters:
     AllowedValues:
       - true
       - false
-  VpcInternalDnsName: 
+  VpcInternalDnsName:
     Description: Route53 Private Hosted zone
     Type: String
     AllowedPattern: "^([a-z0-9]+(-[a-z0-9]+)*\\.?)+\\.$"
@@ -140,9 +140,9 @@ Parameters:
     Type: String
     Default: ""
   #------------------
-Metadata: 
-  AWS::CloudFormation::Interface: 
-    ParameterGroups: 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
       -
         Label:
           default: "Environment"
@@ -185,7 +185,7 @@ Metadata:
           - VpcInternalDnsNameEnable
           - VpcInternalDnsName
 #----------------------------------------------
-Conditions: 
+Conditions:
   CheckInternetAccess: !Equals [ !Ref InternetAccess, true ]
   CreateNatGWs: !And [ !Equals [ !Ref InternetAccess, true ], !Equals [ !Ref EnableNatGW, true ] ]
   CheckVpcInternalDnsNameEnable: !Equals [ !Ref VpcInternalDnsNameEnable, true ]
@@ -195,7 +195,7 @@ Resources:
   #------------------ VPC FlowLog Role
   FlowlogRole:
     Type: "AWS::IAM::Role"
-    Properties: 
+    Properties:
       Path: "/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -211,9 +211,9 @@ Resources:
           PolicyName: "Flowlog"
           PolicyDocument:
             Version: "2012-10-17"
-            Statement: 
+            Statement:
               - Effect: Allow
-                Action: 
+                Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:DescribeLogGroups"
@@ -244,10 +244,10 @@ Resources:
       DomainNameServers:
         - !Ref DhcpOptionsDomainNameServers1
         - !Ref DhcpOptionsDomainNameServers2
-      NtpServers: 
+      NtpServers:
         - !Ref DhcpOptionsNtpServers1
         - !Ref DhcpOptionsNtpServers2
-      Tags: 
+      Tags:
         - Key: Name
           Value:
             Fn::If:
@@ -612,5 +612,3 @@ Outputs:
     Value: !GetAtt Vpc.DefaultSecurityGroup
     Export:
       Name: !Sub ${AWS::StackName}-DefaultSecurityGroupId
-      
-      

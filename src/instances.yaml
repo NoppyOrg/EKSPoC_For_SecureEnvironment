@@ -35,7 +35,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # Update ALL rpms, and change hostname to Userfrendly name 
+          # Update ALL rpms, and change hostname to Userfrendly name
           yum -y update
           hostnamectl set-hostname "Bastion"
   #-- DockerDev
@@ -60,7 +60,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # Update ALL rpms, and change hostname to Userfrendly name 
+          # Update ALL rpms, and change hostname to Userfrendly name
           yum -y update
           hostnamectl set-hostname "DockerDev"
   #-- kubectl
@@ -85,7 +85,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # Update ALL rpms, and change hostname to Userfrendly name 
+          # Update ALL rpms, and change hostname to Userfrendly name
           yum -y update
           hostnamectl set-hostname "EksAdmin"
 

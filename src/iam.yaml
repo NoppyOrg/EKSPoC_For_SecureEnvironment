@@ -9,7 +9,7 @@ Resources:
   #---
   EC2HighAuthorityRole:
     Type: "AWS::IAM::Role"
-    Properties: 
+    Properties:
       Path: "/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -31,7 +31,7 @@ Resources:
   #--
   EC2DockerRole:
     Type: "AWS::IAM::Role"
-    Properties: 
+    Properties:
       Path: "/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -53,7 +53,7 @@ Resources:
                 # docker一時トークン(12時間有効)取得。GetAuthorizationTokenは、Resource未サポート
                 Sid: GetAuthorizationToken
                 Effect: Allow
-                Action: 
+                Action:
                   - ecr:GetAuthorizationToken
                   - ecr:DescribeRepositories
                   - ecr:ListImages
@@ -62,7 +62,7 @@ Resources:
               -
                 Sid: AllowPushPull
                 Effect: Allow
-                Action: 
+                Action:
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
                   - ecr:BatchCheckLayerAvailability
@@ -81,7 +81,7 @@ Resources:
   #---
   EC2kubectlRole:
     Type: "AWS::IAM::Role"
-    Properties: 
+    Properties:
       Path: "/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -102,9 +102,9 @@ Resources:
               -
                 Sid: GetRepositories
                 Effect: Allow
-                Action: 
+                Action:
                   - ecr:DescribeRepositories
-                Resource: "*"        
+                Resource: "*"
               - Sid: "AllowEcrReadList"
                 Effect: Allow
                 Action:
@@ -121,7 +121,7 @@ Resources:
   #---
   EC2k8sWorkerRole:
     Type: AWS::IAM::Role
-    Properties: 
+    Properties:
       Path: "/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -148,13 +148,13 @@ Resources:
       #          # docker一時トークン(12時間有効)取得。GetAuthorizationTokenは、Resource未サポート
       #          Sid: GetAuthorizationToken
       #          Effect: Allow
-      #          Action: 
+      #          Action:
       #            - ecr:GetAuthorizationToken
       #          Resource: "*"
       #        -
       #          Sid: AllowPushPull
       #          Effect: Allow
-      #          Action: 
+      #          Action:
       #            - ecr:BatchCheckLayerAvailability
       #            - ecr:GetDownloadUrlForLayer
       #          Resource:

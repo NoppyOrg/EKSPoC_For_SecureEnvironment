@@ -7,8 +7,8 @@ Resources:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: "aws-load-balancer-controller-repo"
-      ImageScanningConfiguration: 
-         ScanOnPush: true
+      ImageScanningConfiguration:
+        ScanOnPush: true
       #LifecyclePolicy:
       RepositoryPolicyText:
         Version: 2008-10-17
@@ -16,20 +16,20 @@ Resources:
           -
             Sid: GetAuthorizationToken
             Effect: Allow
-            Principal: 
-              AWS: 
+            Principal:
+              AWS:
                 - Fn::ImportValue: EksPoc-IAM-EC2DockerRoleArn
                 - Fn::ImportValue: EksPoc-IAM-EC2k8sWorkerRoleArn
-            Action: 
+            Action:
               - ecr:GetAuthorizationToken
               - ecr:DescribeRepositories
-          - 
+          -
             Sid: AllowPushPull
             Effect: Allow
-            Principal: 
-              AWS: 
+            Principal:
+              AWS:
                 - Fn::ImportValue: EksPoc-IAM-EC2DockerRoleArn
-            Action: 
+            Action:
               - ecr:GetDownloadUrlForLayer
               - ecr:BatchGetImage
               - ecr:BatchCheckLayerAvailability
@@ -40,13 +40,13 @@ Resources:
           -
             Sid: AllowPullOnly
             Effect: Allow
-            Principal: 
-              AWS: 
+            Principal:
+              AWS:
                 - Fn::ImportValue: EksPoc-IAM-EC2k8sWorkerRoleArn
-            Action: 
+            Action:
               - ecr:BatchCheckLayerAvailability
               - ecr:GetDownloadUrlForLayer
-      Tags: 
+      Tags:
         -
           Key: Name
           Value: PoCEcrRepository
@@ -67,5 +67,3 @@ Outputs:
     Value: !GetAtt EcrRepository.RepositoryUri
     Export:
       Name: !Sub ${AWS::StackName}-EcrRepositoryUri
-
-      

@@ -12,7 +12,7 @@ Resources:
         Version: 2012-10-17
         Id: AllowIAMPermissions
         Statement:
-          - 
+          -
             Sid: EnableIAMUserPermissions
             Effect: Allow
             Principal:
@@ -21,7 +21,7 @@ Resources:
             Resource: '*'
   KeyAlias:
     Type: AWS::KMS::Alias
-    Properties: 
+    Properties:
       AliasName: "alias/kmskey"
       TargetKeyId: !Ref Key
 #----------------------------------------------
