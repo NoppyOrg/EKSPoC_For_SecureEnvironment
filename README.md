@@ -663,6 +663,36 @@ kubectl delete -f httpd-deployment.yaml
 作業のカレントディレクトリは、githubからcloneしたEKSPoC_For_SecureEnvironmentのリポジトリ直下を前提としています。
 ![Add Autoscaler Architecture](./Documents/arch-add_Autoscaler.svg)
 
+## (0) Bastion兼高権限用インスタンスにログイン
+- 新しいターミナルを起動する
+- 環境変数を設定する
+```shell
+export PROFILE=<PoC環境のAdministratorAccess権限が実行可能なプロファイル>
+export REGION="ap-northeast-1"
+```
+- 高権限用インスタンスにログイン
+```shell
+# 高権限インスタンスのインスタンスID取得
+HighAuthID=$(aws --profile ${PROFILE} --region ${REGION} --output text \
+    cloudformation describe-stacks \
+        --stack-name EksPoc-Instances \
+        --query 'Stacks[].Outputs[?OutputKey==`BastionAndHighAuthorityId`].[OutputValue]')
+echo "HighAuthID = $HighAuthID"
+
+# SSMによるOSログイン
+aws --profile ${PROFILE} --region ${REGION} \
+    ssm start-session \
+        --target "${HighAuthID}"
+```
+- ec2-userに移動し、ハンズオンデータがあるディレクトリに移動する
+```shell
+# ec2-userにスイッチ
+sudo -u ec2-user -i
+
+# ハンズオンデータがあるディレクトリに移動
+cd EKSPoC_For_SecureEnvironment
+```
+
 ## (1) OIDCプロバイダ
 ### (1)-(a) jqのインストール
 コマンドの中でJSONデータを処理するjqコマンドを利用するため、予めjqをインストールします。
