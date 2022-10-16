@@ -1026,7 +1026,7 @@ metadata:
   name: cluster-autoscaler
   namespace: kube-system
 ```
-### (2)-(f) Autoscalerの適用
+### (2)-(f) (EKS管理インスタンス)Autoscalerの適用
 #### (i) Autoscalerの適用
 ```shell
 kubectl apply -f cluster-autoscaler-autodiscover.yaml
@@ -1047,7 +1047,7 @@ kubectl -n kube-system logs -f deployment.apps/cluster-autoscaler
 ```
 
 
-### (2)-(f) Autoscalerの検証
+### (2)-(g) (EKS管理インスタンス)Autoscalerの検証
 `ハンズオン(その1)`の（7）で動作確認で利用したdeploymentを利用して、autoscalingの動作確認を行います。
 
 #### (i)pod数の変更
@@ -1086,7 +1086,7 @@ kubectl get nodes
     - [EKSユーザーガイド: AWS Load Balancer Controller アドオンのインストール](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/aws-load-balancer-controller.html)
 
 ## (1) PrivateクラスターのためのVPCE作成とECRイメージの格納
-### (1)-(a) AWS Load Balancer Controller用にVPCエンドポイントを追加
+### (1)-(a) (高権限インスタンス)AWS Load Balancer Controller用にVPCエンドポイントを追加
 AWS Load Balancer Controllerから、ELBを操作できるようにするために、Elastic Load BalancingのVPCエンドポイントを追加します。
 ```shell
 aws cloudformation deploy \
@@ -1094,7 +1094,7 @@ aws cloudformation deploy \
         --template-file "./src/vpce_for_aws-load-balancer-controller.yaml"
 ```
 
-### (1)-(b) AWS Load Balancer ControllerとCert-ManagerのDockerイメージの保管
+### (1)-(b) (高権限インスタンス)AWS Load Balancer ControllerとCert-ManagerのDockerイメージの保管
 本検証環境はkubernetesのワーカーノードから外部にはアクセスができないため、ECRリポジトリを用意しAWS Load Balancer Controllerのdockerイメージを格納しておきます。
 #### (i) ECRリポジトリ作成
 - AWS Load Balancer Controller
@@ -1279,14 +1279,7 @@ docker push ${CERT_MGR_WEBH_REPO_URL}:latest
 aws ecr list-images --repository-name cert-manager-webhook-repo
 ```
 
-### (v)ログアウト
-作業が完了したので、Dockerインスタンスからログアウトします
-```shell
-exit
-exit
-```
-
-## (2) AWS Load Balancer Controller用のIAMロール作成
+## (2) (高権限インスタンス)AWS Load Balancer Controller用のIAMロール作成
 以後の作業は、Bastion兼高権限用インスタンスに戻って行います。
 
 ### (2)-(a) IAMポリシー取得
@@ -1347,7 +1340,7 @@ aws iam put-role-policy \
     --policy-document "file://iam_policy.json"
 ```
 
-### (2)-(e)  AWS Load Balancer Controller用のIAMロールをk8sにサービスアカウントとして登録
+### (3) (EKS管理インスタンス)AWS Load Balancer Controller用のIAMロールをk8sにサービスアカウントとして登録
 #### (i) 作成したIAMロールのARN取得
 ```shell
 AWS_LOAD_BALANCER_CONTROLLER_IAM_ROLL_ARN=$(aws --output text \
@@ -1378,7 +1371,7 @@ kubectl -n kube-system get serviceaccount aws-load-balancer-controller
 NAME                           SECRETS   AGE
 aws-load-balancer-controller   1         74s
 ```
-## (3)CERT-Managerのインストール
+## (4) (EKS管理インスタンス)CERT-Managerのインストール
 ### (i)マニフェストの取得
 ```shell
 curl -Lo cert-manager.yaml https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
@@ -1440,15 +1433,15 @@ cert-manager-cainjector   1/1     1            1           55s
 cert-manager-webhook      1/1     1            1           55s
 ```
 
-## (4) AWS Load Balancer Controllerのインストール
-### (4)-(a) Controllerのマニフェスト取得
+## (5) (EKS管理インスタンス)AWS Load Balancer Controllerのインストール
+### (5)-(a) Controllerのマニフェスト取得
 (1)-(b)で確認したAWS Load Balancer ControllerバージョンのYAML定義ファイルを取得します。
 ```shell
 # v2_4_4_full.yamlの場合
 curl -Lo v2_4_4_full.yaml https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.4.4/v2_4_4_full.yaml
 curl -Lo v2_4_4_ingclass.yaml https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.4.4/v2_4_4_ingclass.yaml
 ```
-### Controllerのマニフェストの編集
+### (5)-(b) Controllerのマニフェストの編集
 
 
 - Cluster
@@ -1558,13 +1551,13 @@ NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
 aws-load-balancer-controller   1/1     1            1           3m11s
 ```
 
-## (5) サブネットを検知できるようにする
+## (6) (EKS管理インスタンス)サブネットを検知できるようにする
 ALBを配置するPublic SubnetをAWS Load Balancer Controllerが検知できるようにするため、Public Subnetに以下のタグを追加します。
 - 追加するタグ
     - key: `kubernetes.io/role/elb`
     - value: `1`
 
-### (5)-(a)情報の取得
+### (6)-(a)情報の取得
 ```shell
 PUBSUB1ID=$(aws --output text cloudformation describe-stacks \
         --stack-name EksPoc-VPC \
@@ -1579,25 +1572,25 @@ PUBSUB1ID = ${PUBSUB1ID}
 PUBSUB2ID = ${PUBSUB2ID}
 "
 ```
-### (5)-(b)タグの追加
+### (6)-(b)タグの追加
 ```shell
 aws ec2 create-tags --resources ${PUBSUB1ID} ${PUBSUB2ID} --tags 'Key=kubernetes.io/role/elb,Value=1'
 ```
 
-## (6)テスト
+## (7) (EKS管理インスタンス)テスト
 以下のようにIngress(ALB)、NodePortのサービス、とhttpdのPodで構成するサンプルを稼働させます。
 ![ingress arch](Documents/arch-pod_ingress_arch.svg)
 
 
 
-### (6)-(a) 既存サービスの削除
+### (7)-(a) 既存サービスの削除
 ハンズオン(その2)までの定義がある場合はまず削除します。
 ```shell
 kubectl delete -f k8s_define/httpd-service.yaml
 kubectl delete -f httpd-deployment.yaml
 ```
 
-### (6)-(b) 定義ファイルの生成
+### (7)-(b) 定義ファイルの生成
 #### (i)リポジトリ情報の取得
 ```shell
 REPO_URL=$(aws --output text cloudformation \
@@ -1616,7 +1609,7 @@ sed -e "s;REPO_URL;${REPO_URL};" k8s_define/httpd-ingress.yaml.template > httpd-
 cat httpd-ingress.yaml
 ```
 
-### (6)-(c) DeploymentとServiceの適用
+### (7)-(c) DeploymentとServiceの適用
 #### (i) 適用
 ```shell
 kubectl apply -f httpd-ingress.yaml
