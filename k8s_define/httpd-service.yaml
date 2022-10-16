@@ -6,9 +6,9 @@ metadata:
     app: httpd-service
 spec:
   ports:
-  - port: 8080
-    protocol: TCP
-    targetPort: 80
+    - port: 8080
+      protocol: TCP
+      targetPort: 80
   selector:
     app: httpd-pod
   type: ClusterIP
