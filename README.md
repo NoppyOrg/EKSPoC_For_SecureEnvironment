@@ -721,6 +721,10 @@ OpenIdConnectIssuerUrl=$(aws --output text \
     cloudformation describe-stacks \
         --stack-name EksPoc-EksControlPlane \
         --query 'Stacks[].Outputs[?OutputKey==`OpenIdConnectIssuerUrl`].[OutputValue]')
+
+echo "
+OpenIdConnectIssuerUrl = ${OpenIdConnectIssuerUrl}
+"
 ```
 #### (ii) OICDプロバイダーのから証明書を取得
 ```shell
@@ -833,14 +837,13 @@ sudo -u ec2-user -i
 ```
 
 - dockerイメージの情報取得
-下記で表示されるイメージ情報のURI(`k8s.gcr.io/autoscaling/cluster-autoscaler`など)を控えておきます。
-```shell
-curl https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml 2> /dev/null | grep 'image:'
-```
-タグ情報は、ウェブブラウザで、GitHub の [Cluster Autoscaler リリースページ](https://github.com/kubernetes/autoscaler/releases)を開き、最新の (クラスターの Kubernetes のメジャーおよびマイナーバージョンに一致する) Cluster Autoscaler バージョンを見つけます。ととえば、クラスターの Kubernetes バージョンが 1.21 の場合、1.21 で始まる Cluster Autoscaler リリースを見つけます。次のステップで使用するので、そのリリースのセマンティックバージョン番号 (1.21.n) を書き留めておきます。
+  -  タグ情報は、ウェブブラウザで、GitHub の [Cluster Autoscaler リリースページ](https://github.com/kubernetes/autoscaler/releases)を開きます。
+  - クラスターの Kubernetes のメジャーおよびマイナーバージョンに一致する Cluster Autoscalerを探し、その中で最後のセマンティックバージョンが最新のものを見つけます
+    - たとえば、クラスターの Kubernetes バージョンが `1.21` の場合、1.21 で始まる Cluster Autoscaler リリースを見つけます。次のステップで使用するので、そのリリースのセマンティックバージョン番号 (1.21.n) のものを特定します。
+  - 特定したバージョンのリリースノードをみます。最後の`Images`部分にdockerイメージのURIがあるので、そのURIを控えます。
+    - AMD64のものと、ARM64のものがあるので、アーキテクチャを間違えない様にすること。このハンズオンでは、AMD64の方を選択。
 
-
-上記のimage情報を変数に入れておきます。
+- 上記のimage情報を変数に入れておきます。
 ```shell
 AUTOSCALER_PATH="<上記で控えておいたAutoscalerのイメージのuri:タグ情報>"
 ```
