@@ -485,14 +485,81 @@ data:
 # 以下略
 ```
 
-## (7) 動作テスト(podの起動)
+### (6)-(c) ログアウト
+```shell
+exit  # ec2-userから戻る
+exit  # SSMからのログアウト
+```
+
+## (7) EKS管理用インスタンスのログインとセットアップ
+以後のkubernetes操作は、kubernetesの操作に特化したEKS管理インスタンスで実行します。
+
+### (7)-(a)EKS管理用インスタンスへSSMでOSログイン
+```shell
+# EKS管理用インスタンスのインスタンスID取得
+EksAdminID=$(aws --profile ${PROFILE} --region ${REGION} --output text \
+    cloudformation describe-stacks \
+        --stack-name EksPoc-Instances \
+        --query 'Stacks[].Outputs[?OutputKey==`EksAdminId`].[OutputValue]')
+echo "HighAuthID = $EksAdminID"
+
+# SSMによるOSログイン
+aws --profile ${PROFILE} --region ${REGION} \
+    ssm start-session \
+        --target "${EksAdminID}"
+```
+### (7)-(b)AWS CLIセットアップ
+```shell
+# ec2-userにスイッチ
+sudo -u ec2-user -i
+```
+```shell
+# Setup AWS CLI
+REGION=$( \
+    TOKEN=`curl -s \
+        -X PUT \
+        -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" \
+        "http://169.254.169.254/latest/api/token"` \
+    && curl \
+        -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/placement/availability-zone | sed -e 's/.$//')
+aws configure set region ${REGION}
+aws configure set output json
+```
+### (7)-(c)高権限環境へのkubectlセットアップ
+EksAdmin環境でkubectl操作を可能にするためには、まずHightAuth環境でkubeconfigの初期設定の初期設定を行う必要がある。そのためにまずHighAuth環境でkubectlをセットアップする。
+```shell
+# kubectlのダウンロード
+curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
+
+curl -o kubectl.sha256 https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl.sha256
+
+# チェックサム確認
+if [ $(openssl sha1 -sha256 kubectl|awk '{print $2}') = $(cat kubectl.sha256 | awk '{print $1}') ]; then echo OK; else echo NG; fi
+```
+```shell
+# kubectlのパーミッション付与と移動
+chmod +x ./kubectl
+mkdir -p $HOME/bin && mv ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
+
+# 動作テスト
+kubectl version --short --client
+```
+### (7)-(d)ソースコードのclone
+```shell
+sudo yum -y install git
+git clone https://github.com/Noppy/EKSPoC_For_SecureEnvironment.git
+cd EKSPoC_For_SecureEnvironment
+```
+
+## (8) 動作テスト(podの起動)
 作成したEKSのkubernetes環境の動作確認のために事前にECRに登録したhttpdのDockerイメージを利用し以下のようなサービスを作成して、端末からアクセスできるかテストします。
 ![kubernetesのテスト環境](./Documents/k8s_simple_service_arch.svg)
 
 参考情報
 - [【Kubernetes】Serviceを作成してローカルPCからアクセスしてみる](https://amateur-engineer-blog.com/kubernetes-service/)
 
-### (7)-(a) ECRリポジトリのURL取得
+### (8)-(a) ECRリポジトリのURL取得
 ```shell
 REPO_URL=$(aws --output text cloudformation \
     describe-stacks --stack-name EksPoc-Ecr \
@@ -501,7 +568,7 @@ echo "
 REPO_URL = ${REPO_URL}
 "
 ```
-### (7)-(b) kubernetesのDeploymentとService作成
+### (8)-(b) kubernetesのDeploymentとService作成
 #### (i) 定義ファイルの準備
 ```shell
 # Deployment定義ファイルの作成
@@ -566,7 +633,7 @@ curl http://localhost:9999
 </html>
 ```
 
-### (7)-(c) ServiceとDeploymentの削除
+### (8)-(c) ServiceとDeploymentの削除
 ```shell
 # Serviceの削除
 kubectl delete -f k8s_define/httpd-service.yaml
