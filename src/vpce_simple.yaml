@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Deploy VPCEndpoints
 #----------------------------------------------
 Resources:
@@ -18,8 +18,7 @@ Resources:
         - Fn::ImportValue: EksPoc-SG-VpceSGId
       PolicyDocument:
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal: "*"
             Action:
               - "ecr:*"
@@ -48,16 +47,14 @@ Resources:
         - Fn::ImportValue: EksPoc-SG-VpceSGId
       PolicyDocument:
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               AWS:
                 - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
             Action:
               - "ecr:GetAuthorizationToken"
             Resource: "*"
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal: "*"
             NotAction:
               - "ecr:GetAuthorizationToken"
@@ -77,9 +74,9 @@ Resources:
         Version: 2012-10-17
         Statement:
           - Effect: Allow
-            Principal: '*'
+            Principal: "*"
             Action:
-              - 's3:*'
+              - "s3:*"
             Resource:
               # Allow connections to the Amazon Linux2 yum repositories
               - !Sub "arn:aws:s3:::amazonlinux.${AWS::Region}.amazonaws.com/*"
@@ -103,8 +100,7 @@ Resources:
         - Fn::ImportValue: EksPoc-SG-VpceSGId
       PolicyDocument:
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               AWS:
                 - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"

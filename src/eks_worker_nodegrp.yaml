@@ -17,7 +17,7 @@ Parameters:
     Default: ""
 #----------------------------------------------
 Conditions:
-  CheckKeyPair: !Not [!Equals [!Ref KeyName, "" ]]
+  CheckKeyPair: !Not [!Equals [!Ref KeyName, ""]]
 #----------------------------------------------
 Resources:
   LaunchTemplate:
@@ -25,12 +25,12 @@ Resources:
     Properties:
       LaunchTemplateData:
         BlockDeviceMappings:
-        - DeviceName: "/dev/xvda"
-          Ebs:
-            Iops: "3000"
-            Throughput: "125"
-            VolumeSize: "80"
-            VolumeType: "gp3"
+          - DeviceName: "/dev/xvda"
+            Ebs:
+              Iops: "3000"
+              Throughput: "125"
+              VolumeSize: "80"
+              VolumeType: "gp3"
         MetadataOptions:
           HttpPutResponseHopLimit: "2"
           HttpTokens: "optional"
@@ -40,20 +40,20 @@ Resources:
             - !Ref KeyName
             - !Ref AWS::NoValue
         SecurityGroupIds:
-        - Fn::ImportValue: EksPoc-SG-EksWorkerSGId
+          - Fn::ImportValue: EksPoc-SG-EksWorkerSGId
         TagSpecifications:
-        - ResourceType: "instance"
-          Tags:
-          - Key: "Name"
-            Value: !Sub "${ClusterName}-${NodeGroupName}"
-        - ResourceType: "volume"
-          Tags:
-          - Key: "Name"
-            Value: !Sub "${ClusterName}-${NodeGroupName}"
-        - ResourceType: "network-interface"
-          Tags:
-          - Key: "Name"
-            Value: !Sub "${ClusterName}-${NodeGroupName}"
+          - ResourceType: "instance"
+            Tags:
+              - Key: "Name"
+                Value: !Sub "${ClusterName}-${NodeGroupName}"
+          - ResourceType: "volume"
+            Tags:
+              - Key: "Name"
+                Value: !Sub "${ClusterName}-${NodeGroupName}"
+          - ResourceType: "network-interface"
+            Tags:
+              - Key: "Name"
+                Value: !Sub "${ClusterName}-${NodeGroupName}"
         # UserData:
         #   Fn::Base64:
         #     !Sub |
@@ -80,7 +80,7 @@ Resources:
       ClusterName: !Ref ClusterName
       AmiType: "AL2_x86_64"
       InstanceTypes:
-      - t3.large
+        - t3.large
       CapacityType: SPOT
       LaunchTemplate:
         Id: !Ref LaunchTemplate

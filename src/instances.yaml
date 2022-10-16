@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Deploy High Autority Instances
 #----------------------------------------------
 Parameters:
@@ -8,8 +8,8 @@ Parameters:
     Type: String
     Default: t2.micro
   AmiId:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2"
 
 #----------------------------------------------
 Resources:
@@ -23,7 +23,7 @@ Resources:
         Fn::ImportValue: EksPoc-IAM-EC2HighAuthorityRoleProfile
       Monitoring: yes
       NetworkInterfaces:
-        - DeviceIndex: '0'
+        - DeviceIndex: "0"
           SubnetId:
             Fn::ImportValue: EksPoc-VPC-PublicSubnet1Id
           GroupSet:
@@ -48,7 +48,7 @@ Resources:
         Fn::ImportValue: EksPoc-IAM-EC2DockerRolePlofile
       Monitoring: yes
       NetworkInterfaces:
-        - DeviceIndex: '0'
+        - DeviceIndex: "0"
           SubnetId:
             Fn::ImportValue: EksPoc-VPC-PublicSubnet1Id
           GroupSet:
@@ -73,7 +73,7 @@ Resources:
         Fn::ImportValue: EksPoc-IAM-EC2kubectlRolePlofile
       Monitoring: yes
       NetworkInterfaces:
-        - DeviceIndex: '0'
+        - DeviceIndex: "0"
           SubnetId:
             Fn::ImportValue: EksPoc-VPC-PublicSubnet1Id
           GroupSet:
@@ -88,8 +88,6 @@ Resources:
           # Update ALL rpms, and change hostname to Userfrendly name
           yum -y update
           hostnamectl set-hostname "EksAdmin"
-
-
 
 Outputs:
   #---------------- EC2 Instance
@@ -125,7 +123,3 @@ Outputs:
     Value: !GetAtt EksAdmin.PublicIp
     Export:
       Name: !Sub ${AWS::StackName}-EksAdminPublicIp
-
-
-      
-      

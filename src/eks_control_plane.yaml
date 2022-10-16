@@ -1,6 +1,6 @@
 ---
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'EKS cluster'
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "EKS cluster"
 #----------------------------------------------
 Parameters:
   #------------------
@@ -25,10 +25,10 @@ Resources:
         EndpointPrivateAccess: true
         EndpointPublicAccess: false
         SecurityGroupIds:
-        - Fn::ImportValue: EksPoc-SG-EksCtlPlaneSGId
+          - Fn::ImportValue: EksPoc-SG-EksCtlPlaneSGId
         SubnetIds:
-        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
-        - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
+          - Fn::ImportValue: EksPoc-VPC-PrivateSubnet1Id
+          - Fn::ImportValue: EksPoc-VPC-PrivateSubnet2Id
       Logging:
         ClusterLogging:
           EnabledTypes:
@@ -38,8 +38,7 @@ Resources:
             - Type: controllerManager
             - Type: scheduler
       EncryptionConfig:
-        -
-          Provider:
+        - Provider:
             KeyArn:
               Fn::ImportValue: EksPoc-KMS-KeyArn
           Resources:

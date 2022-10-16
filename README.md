@@ -1573,7 +1573,7 @@ NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
 aws-load-balancer-controller   1/1     1            1           3m11s
 ```
 
-## (6) (EKS管理インスタンス)サブネットを検知できるようにする
+## (6) (高権限インスタンス)サブネットを検知できるようにする
 ALBを配置するPublic SubnetをAWS Load Balancer Controllerが検知できるようにするため、Public Subnetに以下のタグを追加します。
 - 追加するタグ
     - key: `kubernetes.io/role/elb`

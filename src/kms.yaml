@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: "Deploy a Customer Key"
 #----------------------------------------------
 Resources:
@@ -12,13 +12,12 @@ Resources:
         Version: 2012-10-17
         Id: AllowIAMPermissions
         Statement:
-          -
-            Sid: EnableIAMUserPermissions
+          - Sid: EnableIAMUserPermissions
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
   KeyAlias:
     Type: AWS::KMS::Alias
     Properties:

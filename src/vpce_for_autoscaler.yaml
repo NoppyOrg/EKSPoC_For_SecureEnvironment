@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Deploy VPCEndpoints
 #----------------------------------------------
 Resources:
@@ -17,8 +17,7 @@ Resources:
         - Fn::ImportValue: EksPoc-SG-VpceSGId
       PolicyDocument:
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               AWS:
                 - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"

@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Deploy ECR Repository
 #----------------------------------------------
 Resources:
@@ -13,8 +13,7 @@ Resources:
       RepositoryPolicyText:
         Version: 2012-10-17
         Statement:
-          -
-            Sid: GetAuthorizationToken
+          - Sid: GetAuthorizationToken
             Effect: Allow
             Principal:
               AWS:
@@ -23,8 +22,7 @@ Resources:
             Action:
               - ecr:GetAuthorizationToken
               - ecr:DescribeRepositories
-          -
-            Sid: AllowPushPull
+          - Sid: AllowPushPull
             Effect: Allow
             Principal:
               AWS:
@@ -37,8 +35,7 @@ Resources:
               - ecr:InitiateLayerUpload
               - ecr:UploadLayerPart
               - ecr:CompleteLayerUpload
-          -
-            Sid: AllowPullOnly
+          - Sid: AllowPullOnly
             Effect: Allow
             Principal:
               AWS:
@@ -47,8 +44,7 @@ Resources:
               - ecr:BatchCheckLayerAvailability
               - ecr:GetDownloadUrlForLayer
       Tags:
-        -
-          Key: Name
+        - Key: Name
           Value: PoCEcrRepository
 Outputs:
   #---------------- EC2 Instance
