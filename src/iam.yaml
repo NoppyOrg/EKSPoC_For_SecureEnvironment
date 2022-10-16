@@ -93,7 +93,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
-        - PolicyName: EksEcrReadListPolicy
+        - PolicyName: EksEcrReadPermission
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -102,7 +102,7 @@ Resources:
                 Action:
                   - ecr:DescribeRepositories
                 Resource: "*"
-              - Sid: "AllowEcrReadList"
+              - Sid: AllowEcrReadList
                 Effect: Allow
                 Action:
                   - ecr:DescribeImages
@@ -114,6 +114,16 @@ Resources:
                 Action:
                   - "eks:Describe*"
                   - "eks:List*"
+                Resource: "*"
+        - PolicyName: ForThisHandsOnCloudFormationReadPermission
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: AllowCloudFormationReadPermission
+                Effect: Allow
+                Action:
+                  - "cloudformation:Describe*"
+                  - "cloudformation:List*"
                 Resource: "*"
   EC2kubectlRolePlofile:
     Type: AWS::IAM::InstanceProfile
