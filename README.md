@@ -169,11 +169,11 @@ mkdir src
 # dockerコンテナの定義ファイルを作成
 cat > Dockerfile << EOL
 # setting base image
-FROM php:8.1-apache
+FROM php:apache
 
 RUN set -x && \
-    apt-get update && \
-    apt-get upgrade && \
+    apt-get update -y && \
+    apt-get upgrade -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
