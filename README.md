@@ -1080,6 +1080,12 @@ kubectl get nodes
 ```
 また、Autoscalingの`Desired capacity`が変更されているかを確認する。
 
+#### (iv) Deploymentの削除
+```shell
+# Deploymentの削除
+kubectl delete -f httpd-deployment.yaml
+```
+
 # ハンズオン(その3): AWS Load Balancer ControllerによるELB構成
 ![Add AWS Load Balancer Controller](./Documents/arch-add_elb.svg)
 - 参考情報
