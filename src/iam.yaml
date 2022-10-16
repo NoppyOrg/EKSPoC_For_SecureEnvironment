@@ -93,7 +93,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
-        - PolicyName: EcrReadListPolicy
+        - PolicyName: EksEcrReadListPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -109,10 +109,12 @@ Resources:
                   - ecr:ListImages
                 Resource:
                   - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
-              - Sid: AllowEksReadPermission"
+              - Sid: AllowEksReadPermission
+                Effect: Allow
                 Action:
                   - "eks:Describe*"
                   - "eks:List*"
+                Resource: "*"
   EC2kubectlRolePlofile:
     Type: AWS::IAM::InstanceProfile
     Properties:
