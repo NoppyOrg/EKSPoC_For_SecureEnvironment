@@ -694,19 +694,19 @@ cd EKSPoC_For_SecureEnvironment
 ```
 
 ## (1) OIDCプロバイダ
-### (1)-(a) jqのインストール
+### (1)-(a) (高権限インスタンス)jqのインストール
 コマンドの中でJSONデータを処理するjqコマンドを利用するため、予めjqをインストールします。
 ```shell
 sudo yum -y install jq
 ```
-### (1)-(b) VPCエンドポイント作成
+### (1)-(b) (高権限インスタンス)VPCエンドポイント作成
 OIDCの認証情報取得のためにstsへのアクセスを行うため、STSのVPCエンドポイントを追加します。
 ```shell
 aws cloudformation deploy \
         --stack-name EksPoc-Vpce-oidc \
         --template-file "./src/vpce_for_oidc.yaml"
 ```
-### (1)-(c) OIDCプロバイダのサムプリント取得
+### (1)-(c) (高権限インスタンス)OIDCプロバイダのサムプリント取得
 サムプリントは、証明書の暗号化ハッシュです。
 - 参考情報
     - [EKSユーザーガイド: OIDCプロバイダ作成](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
@@ -715,7 +715,7 @@ aws cloudformation deploy \
     - [Terraformでeksのiam role per podを実現する](https://medium.com/@sueken0117/terraform%E3%81%A7eks%E3%81%AEiam-role-per-pod%E3%82%92%E5%AE%9F%E7%8F%BE%E3%81%99%E3%82%8B-5b9b1a95eeb9)
 
 
-#### (i) EKSクラスターからOICD用のURLを取得(CloudFormationのスタック出力結果からの取得)
+#### (i) (高権限インスタンス)EKSクラスターからOICD用のURLを取得(CloudFormationのスタック出力結果からの取得)
 ```shell
 OpenIdConnectIssuerUrl=$(aws --output text \
     cloudformation describe-stacks \
@@ -726,7 +726,7 @@ echo "
 OpenIdConnectIssuerUrl = ${OpenIdConnectIssuerUrl}
 "
 ```
-#### (ii) OICDプロバイダーのから証明書を取得
+#### (ii) (高権限インスタンス)OICDプロバイダーのから証明書を取得
 ```shell
 # IdP の設定ドキュメント取得のURL生成
 URL="${OpenIdConnectIssuerUrl}/.well-known/openid-configuration"
@@ -773,7 +773,7 @@ cat certificate.crt
 THUMBPRINT=$(openssl x509 -in certificate.crt -fingerprint -noout | sed -E 's/SHA1 Fingerprint=(.*)/\1/g' | sed -E 's/://g')
 echo $THUMBPRINT
 ```
-### (1)-(d) OIDCプロバイダ作成
+### (1)-(d) (高権限インスタンス)OIDCプロバイダ作成
 ```shell
 aws iam create-open-id-connect-provider \
     --url "${OpenIdConnectIssuerUrl}" \
@@ -788,7 +788,7 @@ Cluster Autoscalerを導入して、kubernetesからAutoScalingを調整して�
         - [EKSでのセットアップ手順](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md)
         - [AWS OIDCプロバイダー利用時の説明](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/CA_with_AWS_IAM_OIDC.md)
 
-### (2)-(a) Cluster Autoscaler用にVPCエンドポイントを追加
+### (2)-(a) (高権限インスタンス)Cluster Autoscaler用にVPCエンドポイントを追加
 Cluster Autoscalerは、ワーカーノードのリソース利用状況に合わせて、EC2 Autoscalingのインスタンス数設定を変更することで、キャパシティーの調整を行います。
 Cluster AutoscalerからEC2 Autoscalingを操作できるようにするために、EC2 AutoscalingのVPCエンドポイントを追加します。
 ```shell
@@ -797,10 +797,10 @@ aws cloudformation deploy \
         --template-file "./src/vpce_for_autoscaler.yaml"
 ```
 
-### (2)-(b) AutoscalerのdockerイメージをECRに格納
+### (2)-(b) (高権限インスタンス)AutoscalerのdockerイメージをECRに格納
 本検証環境は、kubernetesのワーカーノードから外部にはアクセスができないため、そのままではCluster Autoscalerのdockerイメージが取得できません。
 そのためECRリポジトリを用意し、Cluster Autoscalerのdockerイメージを格納しておきます。
-#### (i) Autoscalerイメージ保管用ECRリポジトリ作成
+#### (i) (高権限インスタンス)Autoscalerイメージ保管用ECRリポジトリ作成
 ```shell
 aws cloudformation deploy \
         --stack-name EksPoc-AutoscalerEcr \
@@ -891,7 +891,7 @@ exit
 
 以後の作業は、Bastion兼高権限用インスタンスに戻って行います。
 
-### (2)-(c) Cluster Autoscaler用IAMロール追加
+### (2)-(c) (高権限インスタンス)Cluster Autoscaler用IAMロール追加
 #### (i)IAMロールの信頼関係(Trust relationship)設定用の情報取得
 ```shell
 # EKSクラスターのOIDC情報取得
@@ -937,7 +937,7 @@ aws iam put-role-policy \
     --policy-name Autoscaler \
     --policy-document "file://./src/Autoscaler/cluster_autoscaler_iam_policy.json"
 ```
-### (2)-(d) ワーカーノードのインスタンスロールへの権限付与
+### (2)-(d) (高権限インスタンス)ワーカーノードのインスタンスロールへの権限付与
 下記ドキュメントに`Attach the above created policy to the instance role that's attached to your Amazon EKS worker nodes.`とあるので、同じIAMポリシーをワーカーノードのインスタンスロールにも付与します。
 - https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/CA_with_AWS_IAM_OIDC.md
 
@@ -956,7 +956,8 @@ aws iam put-role-policy \
     --policy-document "file://./src/Autoscaler/cluster_autoscaler_iam_policy.json"
 ```
 
-### (2)-(e) Autoscalerの定義サンプル取得と編集
+### (2)-(e) (EKS管理インスタンス)Autoscalerの定義サンプル取得と編集
+以下の作業はEKS管理インスタンスで操作します。
 #### (ii) ロールのARN確認
 ```shell
 # ロールのARNをメモ帳などに控えておきます。
