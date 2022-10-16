@@ -960,6 +960,16 @@ aws iam put-role-policy \
 以下の作業はEKS管理インスタンスで操作します。
 #### (ii) ロールのARN確認
 ```shell
+# EKSクラスター情報取得
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+echo "EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}"
+
+IAM_ROLE_NAME=${EKS_CLUSTER_NAME}-Autoscaler_Role
+```
+
+```shell
 # ロールのARNをメモ帳などに控えておきます。
 aws --output text iam get-role --role-name "${IAM_ROLE_NAME}" --query 'Role.Arn'
 ```
