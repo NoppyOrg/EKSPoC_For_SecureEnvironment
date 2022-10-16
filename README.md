@@ -47,7 +47,8 @@ aws --profile ${PROFILE} --region ${REGION} \
     cloudformation deploy \
         --stack-name EksPoc-VPC \
         --template-file "./src/vpc-2az-4subnets.yaml" \
-        --parameter-overrides "file://./src/vpc.conf"
+        --parameter-overrides "file://./src/vpc.conf" \
+        --capabilities CAPABILITY_IAM ;
 ```
 ### (2)-(b) SecurityGroup作成
 ```shell
