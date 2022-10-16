@@ -1109,11 +1109,23 @@ aws cloudformation deploy \
         --stack-name EksPoc-AwsLoadBalancerControllerEcr \
         --template-file "./src/AWSLoadBalancerController/ecr_for_aws-load-balancer-controller.yaml"
 ```
-- CERT-Manager
+- CERT-Manager(Controller用)
 ```shell
 aws cloudformation deploy \
         --stack-name EksPoc-CertManagerControllerEcr \
         --template-file "./src/AWSLoadBalancerController/ecr_for_cert-manager-controller.yaml"
+```
+- CERT-Manager(Cainjector用)
+```shell
+aws cloudformation deploy \
+        --stack-name EksPoc-CertManagerCainjectorEcr \
+        --template-file "./src/AWSLoadBalancerController/ecr_for_cert-manager-cainjector.yaml"
+```
+- CERT-Manager(CertManagerWebhook用)
+```shell
+aws cloudformation deploy \
+        --stack-name EksPoc-CertManagerWebhookEcr \
+        --template-file "./src/AWSLoadBalancerController/ecr_for_cert-manager-webhook.yaml"
 ```
 
 #### (ii) AWS Load Balancer Controllerの最新バージョンを確認
