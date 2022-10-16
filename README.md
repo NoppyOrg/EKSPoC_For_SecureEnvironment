@@ -1351,6 +1351,20 @@ aws iam put-role-policy \
 ### (3) (EKS管理インスタンス)AWS Load Balancer Controller用のIAMロールをk8sにサービスアカウントとして登録
 #### (i) 作成したIAMロールのARN取得
 ```shell
+# EKSクラスター情報取得
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+echo "EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}"
+
+LB_CTL_IAM_ROLE_NAME=${EKS_CLUSTER_NAME}-AWS-Loadbalancer-Controler-Role
+
+echo "
+LB_CTL_IAM_ROLE_NAME = ${LB_CTL_IAM_ROLE_NAME}
+"
+
+```
+```shell
 AWS_LOAD_BALANCER_CONTROLLER_IAM_ROLL_ARN=$(aws --output text \
     iam get-role --role-name "${LB_CTL_IAM_ROLE_NAME}" --query 'Role.Arn')
 
