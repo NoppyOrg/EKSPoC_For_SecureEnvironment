@@ -525,8 +525,7 @@ REGION=$( \
 aws configure set region ${REGION}
 aws configure set output json
 ```
-### (7)-(c)高権限環境へのkubectlセットアップ
-EksAdmin環境でkubectl操作を可能にするためには、まずHightAuth環境でkubeconfigの初期設定の初期設定を行う必要がある。そのためにまずHighAuth環境でkubectlをセットアップする。
+### (7)-(c)kubectlセットアップ
 ```shell
 # kubectlのダウンロード
 curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
@@ -545,7 +544,24 @@ echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
 # 動作テスト
 kubectl version --short --client
 ```
-### (7)-(d)ソースコードのclone
+
+### (7)-(d)kubectlコマンドによるEKSクラスターへの接続確認
+```shell
+# EKSクラスター情報取得
+EKS_CLUSTER_NAME=$(aws --output text cloudformation \
+    describe-stacks --stack-name EksPoc-EksControlPlane \
+    --query 'Stacks[].Outputs[?OutputKey==`ClusterName`].[OutputValue]' )
+echo "EKS_CLUSTER_NAME = ${EKS_CLUSTER_NAME}"
+```
+```shell
+# kubectl用のconfig取得
+aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME}
+
+# kubectlコマンドからのk8sマスターノード接続確認
+kubectl get svc
+```
+
+### (7)-(e)ソースコードのclone
 ```shell
 sudo yum -y install git
 git clone https://github.com/Noppy/EKSPoC_For_SecureEnvironment.git
