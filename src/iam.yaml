@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Deploy IAM Role for Instances
 #----------------------------------------------
 Resources:
@@ -49,8 +49,7 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              -
-                # docker一時トークン(12時間有効)取得。GetAuthorizationTokenは、Resource未サポート
+              - # docker一時トークン(12時間有効)取得。GetAuthorizationTokenは、Resource未サポート
                 Sid: GetAuthorizationToken
                 Effect: Allow
                 Action:
@@ -59,8 +58,7 @@ Resources:
                   - ecr:ListImages
                   - "ecr:Describe*"
                 Resource: "*"
-              -
-                Sid: AllowPushPull
+              - Sid: AllowPushPull
                 Effect: Allow
                 Action:
                   - ecr:GetDownloadUrlForLayer
@@ -99,8 +97,7 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: GetRepositories
+              - Sid: GetRepositories
                 Effect: Allow
                 Action:
                   - ecr:DescribeRepositories
@@ -112,6 +109,10 @@ Resources:
                   - ecr:ListImages
                 Resource:
                   - !Sub "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+              - Sid: AllowEksReadPermission"
+                Action:
+                  - "eks:Describe*"
+                  - "eks:List*"
   EC2kubectlRolePlofile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -172,17 +173,17 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - eks.amazonaws.com
-          Action:
-          - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action:
+              - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
-        - arn:aws:iam::aws:policy/AmazonEKSVPCResourceController  #PodへのSGデプロイなどで利用
+        - arn:aws:iam::aws:policy/AmazonEKSVPCResourceController #PodへのSGデプロイなどで利用
 Outputs:
   #---------------- IAM Role
   EC2HighAuthorityRoleArn:
